@@ -7039,6 +7039,18 @@ def main(argv: list[str] | None = None) -> int:
     gw_route.add_argument("--channel-id", default=None, dest="gateway_route_channel_id")
     gw_route.add_argument("--target-workspace", default=None, dest="gateway_route_target_workspace")
     gw_route.add_argument("--target-profile-id", default=None, dest="gateway_route_target_profile_id")
+    gw_route.add_argument(
+        "--execute",
+        action="store_true",
+        dest="gateway_route_execute",
+        help="提交联邦路由审计（dry_run=false；须环境变量 CAI_GATEWAY_FEDERATION_ROUTE_EXECUTE 等；GW-N02-D02）",
+    )
+    gw_route.add_argument(
+        "--execute-token",
+        default=None,
+        dest="gateway_route_execute_token",
+        help="当设置 CAI_GATEWAY_FEDERATION_ROUTE_EXECUTE_TOKEN 时用于校验（HTTP 用 X-Cai-Federation-Execute-Token）",
+    )
     gw_route.add_argument("--json", action="store_true", dest="json_output")
 
     gw_tg = gateway_sub.add_parser("telegram", help="Telegram 映射管理")
@@ -13412,13 +13424,17 @@ def main(argv: list[str] | None = None) -> int:
                     return 0
                 return 2
             if ga == "route-preview":
+                dry_run = not bool(getattr(args, "gateway_route_execute", False))
+                exec_tok = getattr(args, "gateway_route_execute_token", None)
+                exec_tok_s = str(exec_tok).strip() if exec_tok else None
                 out_st = gateway_lifecycle.build_gateway_proxy_route_preview(
                     root=root,
                     platform=str(getattr(args, "gateway_route_platform", "") or ""),
                     channel_id=getattr(args, "gateway_route_channel_id", None),
                     target_workspace=getattr(args, "gateway_route_target_workspace", None),
                     target_profile_id=getattr(args, "gateway_route_target_profile_id", None),
-                    dry_run=True,
+                    dry_run=dry_run,
+                    execute_token=exec_tok_s,
                 )
                 if bool(getattr(args, "json_output", False)):
                     print(json.dumps(out_st, ensure_ascii=False))
@@ -13428,8 +13444,11 @@ def main(argv: list[str] | None = None) -> int:
                     print(
                         "[gateway route-preview] "
                         f"platform={src.get('platform')} channel={src.get('channel_id')} "
-                        f"workspace={rt.get('target_workspace')} profile={rt.get('target_profile_id')}",
+                        f"workspace={rt.get('target_workspace')} profile={rt.get('target_profile_id')} "
+                        f"dry_run={out_st.get('dry_run')}",
                     )
+                if out_st.get("ok") is False:
+                    return 2
                 return 0
 
         if ga == "platforms":

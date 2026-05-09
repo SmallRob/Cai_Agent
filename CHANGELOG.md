@@ -4,6 +4,8 @@
 
 ### Unreleased
 
+- **GW-N02-D02 federation route-preview execute (audit)**: `gateway route-preview --execute` and `POST /v1/gateway/route-preview` with `dry_run:false` append **`gateway_federation_route_audit_v1`** lines to **`.cai/gateway/federation-route-audit.jsonl`** when **`CAI_GATEWAY_FEDERATION_ROUTE_EXECUTE`** is set, the target workspace passes the allowlist (**`CAI_GATEWAY_FEDERATION_ALLOWED_WORKSPACES`** for cross-root), and **`target_profile_id`** exists in target settings. Optional **`CAI_GATEWAY_FEDERATION_ROUTE_EXECUTE_TOKEN`** matches header **`X-Cai-Federation-Execute-Token`**. No LLM or subprocess. Code: **`build_gateway_proxy_route_preview`** in `gateway_lifecycle.py`; API and CLI; tests + docs.
+
 - **GW-N02-D01 gateway slash deploy check**: CLI **`cai-agent gateway slash-deploy-check --json`** and **`GET /v1/gateway/slash-deploy-check`** return **`gateway_slash_deploy_check_v1`** (Slack / Discord / Teams checklist with optional vendor probes and manual `ok: null` steps). **`gateway prod-status --json`** embeds the same payload under **`slash_deploy_check`**. Code: **`build_gateway_slash_deploy_check_payload`** in `gateway_production.py`; OpenAPI; schema README; smoke + tests.
 
 - **OPS-N02-D01 ops action audit API**: **`cai-agent ops serve`** adds **`GET /v1/ops/action-audit`** (**`ops_action_audit_query_v1`**) with optional **`workspace`** or merged allowlist view; filters **`action`**, **`mode`**, **`ok`**, **`actor_prefix`**, **`limit`**. **`ops_workspaces_v1`** rows include **`action_audit_url`**. Code: **`build_ops_action_audit_query_payload`** in `ops_dashboard.py`; OpenAPI; docs. Tests: full pytest + smoke.

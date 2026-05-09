@@ -699,6 +699,79 @@ def test_api_gateway_route_preview_dry_run_only(tmp_path: Path) -> None:
         httpd.server_close()
 
 
+def test_api_gateway_route_preview_execute_ok(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    from cai_agent.config import load_agent_settings_for_workspace
+
+    monkeypatch.setenv("CAI_GATEWAY_FEDERATION_ROUTE_EXECUTE", "1")
+    monkeypatch.delenv("CAI_GATEWAY_FEDERATION_ROUTE_EXECUTE_TOKEN", raising=False)
+    root = tmp_path.resolve()
+    profile_id = load_agent_settings_for_workspace(workspace=root).profiles[0].id
+    httpd = _start(root, None)
+    try:
+        url = _url(httpd, "/v1/gateway/route-preview")
+        req = urllib.request.Request(
+            url,
+            data=json.dumps(
+                {
+                    "platform": "telegram",
+                    "channel_id": "9:9",
+                    "dry_run": False,
+                    "target_profile_id": profile_id,
+                },
+            ).encode("utf-8"),
+            method="POST",
+        )
+        req.add_header("Content-Type", "application/json")
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        assert data.get("schema_version") == "gateway_proxy_route_v1"
+        assert data.get("dry_run") is False
+        assert data.get("ok") is True
+        assert (data.get("route") or {}).get("decision") == "federation_route_committed"
+        audit = root / ".cai" / "gateway" / "federation-route-audit.jsonl"
+        assert audit.is_file()
+    finally:
+        httpd.shutdown()
+        httpd.server_close()
+
+
+def test_api_gateway_route_preview_execute_token_header(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    from cai_agent.config import load_agent_settings_for_workspace
+
+    monkeypatch.setenv("CAI_GATEWAY_FEDERATION_ROUTE_EXECUTE", "1")
+    monkeypatch.setenv("CAI_GATEWAY_FEDERATION_ROUTE_EXECUTE_TOKEN", "s3cret")
+    root = tmp_path.resolve()
+    profile_id = load_agent_settings_for_workspace(workspace=root).profiles[0].id
+    httpd = _start(root, None)
+    try:
+        url = _url(httpd, "/v1/gateway/route-preview")
+        req_bad = urllib.request.Request(
+            url,
+            data=json.dumps({"platform": "telegram", "dry_run": False}).encode("utf-8"),
+            method="POST",
+        )
+        req_bad.add_header("Content-Type", "application/json")
+        with pytest.raises(urllib.error.HTTPError) as ei:
+            urllib.request.urlopen(req_bad, timeout=5)
+        assert ei.value.code == 403
+
+        req_ok = urllib.request.Request(
+            url,
+            data=json.dumps(
+                {"platform": "telegram", "dry_run": False, "target_profile_id": profile_id},
+            ).encode("utf-8"),
+            method="POST",
+        )
+        req_ok.add_header("Content-Type", "application/json")
+        req_ok.add_header("X-Cai-Federation-Execute-Token", "s3cret")
+        with urllib.request.urlopen(req_ok, timeout=5) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        assert data.get("ok") is True
+    finally:
+        httpd.shutdown()
+        httpd.server_close()
+
+
 def test_api_openai_chat_completions_requires_bearer(tmp_path: Path) -> None:
     root = tmp_path.resolve()
     httpd = _start(root, "abc")

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import json
+import os
 import unittest
 from contextlib import redirect_stdout
 from pathlib import Path
@@ -218,6 +219,42 @@ class GatewayLifecycleCliTests(unittest.TestCase):
             self.assertEqual(src.get("platform"), "telegram")
             self.assertEqual(src.get("channel_id"), "42:7")
             self.assertEqual(route.get("target_profile_id"), "p1")
+
+    def test_gateway_route_preview_execute_writes_audit(self) -> None:
+        from cai_agent.config import load_agent_settings_for_workspace
+
+        with TemporaryDirectory() as td:
+            root = Path(td)
+            profile_id = load_agent_settings_for_workspace(workspace=root.resolve()).profiles[0].id
+            buf = io.StringIO()
+            with patch.dict(os.environ, {"CAI_GATEWAY_FEDERATION_ROUTE_EXECUTE": "1"}, clear=False):
+                with patch("cai_agent.__main__.os.getcwd", return_value=str(root)):
+                    with redirect_stdout(buf):
+                        rc = main(
+                            [
+                                "gateway",
+                                "route-preview",
+                                "--platform",
+                                "telegram",
+                                "--channel-id",
+                                "1:2",
+                                "--target-profile-id",
+                                profile_id,
+                                "--execute",
+                                "--json",
+                            ],
+                        )
+            self.assertEqual(rc, 0)
+            payload = json.loads(buf.getvalue().strip())
+            self.assertEqual(payload.get("schema_version"), "gateway_proxy_route_v1")
+            self.assertIs(payload.get("dry_run"), False)
+            self.assertIs(payload.get("ok"), True)
+            self.assertEqual((payload.get("route") or {}).get("decision"), "federation_route_committed")
+            audit_f = root / ".cai" / "gateway" / "federation-route-audit.jsonl"
+            self.assertTrue(audit_f.is_file())
+            line = audit_f.read_text(encoding="utf-8").strip().splitlines()[-1]
+            rec = json.loads(line)
+            self.assertEqual(rec.get("schema_version"), "gateway_federation_route_audit_v1")
 
     def test_gateway_federation_summary_json(self) -> None:
         with TemporaryDirectory() as td:

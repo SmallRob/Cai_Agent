@@ -6,6 +6,8 @@
 
 ### Unreleased
 
+- **GW-N02-D02 联邦 route-preview 执行（审计落盘）**：**`gateway route-preview --execute`** 与 **`POST /v1/gateway/route-preview`**（**`dry_run:false`**）在 **`CAI_GATEWAY_FEDERATION_ROUTE_EXECUTE`**、目标 workspace 白名单（**`CAI_GATEWAY_FEDERATION_ALLOWED_WORKSPACES`**）与目标 **`target_profile_id`** 校验通过时，向源工作区 **`.cai/gateway/federation-route-audit.jsonl`** 追加 **`gateway_federation_route_audit_v1`**；可选 **`CAI_GATEWAY_FEDERATION_ROUTE_EXECUTE_TOKEN`** 与头 **`X-Cai-Federation-Execute-Token`**。不调用 LLM、不拉起子进程。实现 **`build_gateway_proxy_route_preview`**（`gateway_lifecycle.py`）；API/CLI；测试与 schema README。
+
 - **GW-N02-D01 Gateway Slash 部署自检**：CLI **`cai-agent gateway slash-deploy-check --json`** 与 **`GET /v1/gateway/slash-deploy-check`** 返回 **`gateway_slash_deploy_check_v1`**（Slack / Discord / Teams；含可选 API 探测与 **`ok: null`** 的厂商控制台步骤）。**`gateway prod-status --json`** 内嵌同结构字段 **`slash_deploy_check`**。实现 **`build_gateway_slash_deploy_check_payload`**（`gateway_production.py`）；OpenAPI；schema README；smoke + 测试。
 
 - **OPS-N02-D01 Operator 审计查询**：**`ops serve`** 新增 **`GET /v1/ops/action-audit`**（**`ops_action_audit_query_v1`**）：可选 **`workspace`** 或省略以在 allowlist 内合并；过滤 **`action`** / **`mode`** / **`ok`** / **`actor_prefix`** / **`limit`**。**`ops_workspaces_v1`** 增加 **`action_audit_url`**。实现 **`build_ops_action_audit_query_payload`**（`ops_dashboard.py`）；OpenAPI；OPS_DYNAMIC / schema README / README。回归：全量 pytest + smoke。

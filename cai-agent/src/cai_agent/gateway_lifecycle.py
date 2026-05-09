@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 import os
+import re
+import secrets
 import subprocess
 import sys
 from datetime import UTC, datetime
@@ -18,6 +20,57 @@ CONFIG_SCHEMA = "gateway_telegram_config_v1"
 PID_SCHEMA = "gateway_telegram_pid_v1"
 STATUS_SCHEMA = "gateway_lifecycle_status_v1"
 PROXY_ROUTE_SCHEMA = "gateway_proxy_route_v1"
+FEDERATION_ROUTE_AUDIT_SCHEMA = "gateway_federation_route_audit_v1"
+FEDERATION_EXECUTE_ENV = "CAI_GATEWAY_FEDERATION_ROUTE_EXECUTE"
+FEDERATION_ALLOWLIST_ENV = "CAI_GATEWAY_FEDERATION_ALLOWED_WORKSPACES"
+FEDERATION_EXECUTE_TOKEN_ENV = "CAI_GATEWAY_FEDERATION_ROUTE_EXECUTE_TOKEN"
+
+
+def _env_truthy(raw: str | None) -> bool:
+    return str(raw or "").strip().lower() in ("1", "true", "yes", "on")
+
+
+def _federation_execute_enabled() -> bool:
+    return _env_truthy(os.environ.get(FEDERATION_EXECUTE_ENV))
+
+
+def _split_workspace_allowlist(raw: str | None) -> list[Path]:
+    if not raw or not str(raw).strip():
+        return []
+    parts = re.split(r"[\n;|]+", str(raw))
+    out: list[Path] = []
+    for p in parts:
+        s = str(p).strip()
+        if not s:
+            continue
+        out.append(Path(s).expanduser().resolve())
+    return out
+
+
+def _path_allowed_federation_target(*, source: Path, target: Path, allowlist: list[Path]) -> bool:
+    s = source.resolve()
+    t = target.resolve()
+    if t == s:
+        return True
+    if not allowlist:
+        return False
+    for prefix in allowlist:
+        try:
+            t.relative_to(prefix.resolve())
+            return True
+        except ValueError:
+            continue
+    return False
+
+
+def _append_federation_route_audit(source_root: Path, record: dict[str, Any]) -> Path:
+    gdir = _gateway_dir(source_root)
+    path = gdir / "federation-route-audit.jsonl"
+    line = json.dumps(record, ensure_ascii=False) + "\n"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as f:
+        f.write(line)
+    return path
 
 
 def _gateway_dir(root: Path) -> Path:
@@ -224,27 +277,109 @@ def build_gateway_proxy_route_preview(
     target_workspace: str | None,
     target_profile_id: str | None,
     dry_run: bool = True,
+    execute_token: str | None = None,
 ) -> dict[str, Any]:
-    """HM-N07-D03: minimal gateway proxy/routing preview contract."""
+    """HM-N07-D03 / GW-N02-D02: gateway proxy/routing preview; optional federation commit.
+
+    When ``dry_run`` is false, requires ``CAI_GATEWAY_FEDERATION_ROUTE_EXECUTE`` truthy,
+    optional ``CAI_GATEWAY_FEDERATION_ROUTE_EXECUTE_TOKEN`` (must match ``execute_token``),
+    target workspace allowlist (same workspace always allowed; cross-root needs
+    ``CAI_GATEWAY_FEDERATION_ALLOWED_WORKSPACES``), and a resolvable target profile id.
+    Success appends ``gateway_federation_route_audit_v1`` JSONL under
+    ``.cai/gateway/federation-route-audit.jsonl`` (no LLM or gateway process spawn).
+    """
     base = Path(root).expanduser().resolve()
     src = build_gateway_summary_payload(base)
     channel = str(channel_id or "").strip() or "default"
-    return {
+    plat = str(platform or "").strip().lower() or "unknown"
+    target_resolved = Path(str(target_workspace or base)).expanduser().resolve()
+    profile_id = str(target_profile_id or "").strip() or "default"
+    out: dict[str, Any] = {
         "schema_version": PROXY_ROUTE_SCHEMA,
         "generated_at": datetime.now(UTC).isoformat(),
         "dry_run": bool(dry_run),
         "source": {
             "workspace": str(base),
             "gateway_status": src.get("status"),
-            "platform": str(platform or "").strip().lower() or "unknown",
+            "platform": plat,
             "channel_id": channel,
         },
         "route": {
-            "target_workspace": str(target_workspace or base),
-            "target_profile_id": (str(target_profile_id or "").strip() or "default"),
+            "target_workspace": str(target_resolved),
+            "target_profile_id": profile_id,
             "decision": "route_preview_only",
         },
     }
+    if dry_run:
+        return out
+
+    if not _federation_execute_enabled():
+        out["ok"] = False
+        out["error"] = "federation_execute_disabled"
+        out["message"] = (
+            f"Set {FEDERATION_EXECUTE_ENV}=1 to allow dry_run:false route-preview commits "
+            "(GW-N02-D02)."
+        )
+        return out
+
+    expected_tok = str(os.environ.get(FEDERATION_EXECUTE_TOKEN_ENV) or "").strip()
+    if expected_tok:
+        got = str(execute_token or "").strip()
+        if not secrets.compare_digest(expected_tok, got):
+            out["ok"] = False
+            out["error"] = "federation_execute_token_mismatch"
+            out["message"] = "CAI_GATEWAY_FEDERATION_ROUTE_EXECUTE_TOKEN is set but the execute token did not match."
+            return out
+
+    allow_roots = _split_workspace_allowlist(os.environ.get(FEDERATION_ALLOWLIST_ENV))
+    if not _path_allowed_federation_target(source=base, target=target_resolved, allowlist=allow_roots):
+        out["ok"] = False
+        out["error"] = "target_workspace_not_allowed"
+        out["message"] = (
+            "Cross-workspace federation route requires the target under "
+            f"{FEDERATION_ALLOWLIST_ENV}, or target must equal the source workspace."
+        )
+        return out
+
+    from cai_agent.config import load_agent_settings_for_workspace
+
+    try:
+        tset = load_agent_settings_for_workspace(workspace=target_resolved)
+    except Exception as e:
+        out["ok"] = False
+        out["error"] = "target_settings_load_failed"
+        out["message"] = str(e)[:400]
+        return out
+
+    profile_ids = {p.id for p in tset.profiles}
+    if profile_id not in profile_ids:
+        out["ok"] = False
+        out["error"] = "target_profile_not_found"
+        out["message"] = f"Profile id {profile_id!r} not defined in target workspace."
+        return out
+
+    audit_record: dict[str, Any] = {
+        "schema_version": FEDERATION_ROUTE_AUDIT_SCHEMA,
+        "recorded_at": datetime.now(UTC).isoformat(),
+        "cai_agent_version": __version__,
+        "source_workspace": str(base),
+        "platform": plat,
+        "channel_id": channel,
+        "target_workspace": str(target_resolved),
+        "target_profile_id": profile_id,
+    }
+    audit_path = _append_federation_route_audit(base, audit_record)
+    out["ok"] = True
+    route_doc = out.get("route") if isinstance(out.get("route"), dict) else {}
+    route_doc["decision"] = "federation_route_committed"
+    out["route"] = route_doc
+    out["execution"] = {
+        "schema_version": "gateway_federation_route_execution_v1",
+        "ok": True,
+        "audit_file": str(audit_path),
+        "audit_schema_version": FEDERATION_ROUTE_AUDIT_SCHEMA,
+    }
+    return out
 
 
 def start_webhook_subprocess(root: Path | str) -> dict[str, Any]:

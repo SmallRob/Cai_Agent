@@ -295,7 +295,23 @@ def build_api_openapi_v1() -> dict[str, Any]:
                 schema_version="gateway_slash_deploy_check_v1",
             ),
         },
-        "/v1/gateway/route-preview": {"post": _op(method="postGatewayRoutePreview", summary="Dry-run gateway route preview", schema_version="gateway_proxy_route_v1", request_schema=route_preview_body)},
+        "/v1/gateway/route-preview": {
+            "post": _op(
+                method="postGatewayRoutePreview",
+                summary="Gateway route preview (dry_run default true; false commits audit when federation execute env is set)",
+                schema_version="gateway_proxy_route_v1",
+                request_schema=route_preview_body,
+                parameters=[
+                    {
+                        "name": "X-Cai-Federation-Execute-Token",
+                        "in": "header",
+                        "required": False,
+                        "schema": {"type": "string"},
+                        "description": "When CAI_GATEWAY_FEDERATION_ROUTE_EXECUTE_TOKEN is set, must match for dry_run:false.",
+                    },
+                ],
+            ),
+        },
         "/v1/tasks/run-due": {"post": _op(method="postTasksRunDue", summary="Dry-run due schedule tasks", schema_version="api_tasks_run_due_v1", request_schema=run_due_body)},
         "/v1/chat/completions": {"post": _op(method="postChatCompletions", summary="OpenAI-compatible chat completion", schema_version="api_openai_chat_completion_v1", request_schema=chat_body)},
         "/v1/ops/healthz": {
@@ -958,24 +974,27 @@ class AgentApiRequestHandler(BaseHTTPRequestHandler):
                     return
                 dry = body.get("dry_run")
                 dry_run = True if dry is None else bool(dry)
-                if not dry_run:
-                    self._send_json(
-                        403,
-                        {
-                            "ok": False,
-                            "error": "execute_forbidden",
-                            "message": "route-preview supports dry_run only",
-                        },
-                    )
-                    return
+                exec_tok_hdr = self.headers.get("X-Cai-Federation-Execute-Token")
+                exec_tok = str(exec_tok_hdr).strip() if exec_tok_hdr else None
                 payload = build_gateway_proxy_route_preview(
                     root=ws,
                     platform=str(body.get("platform") or ""),
                     channel_id=body.get("channel_id"),
                     target_workspace=body.get("target_workspace"),
                     target_profile_id=body.get("target_profile_id"),
-                    dry_run=True,
+                    dry_run=dry_run,
+                    execute_token=exec_tok,
                 )
+                if payload.get("ok") is False:
+                    self._send_json(
+                        403,
+                        {
+                            "ok": False,
+                            "error": str(payload.get("error") or "execute_forbidden"),
+                            "message": str(payload.get("message") or "")[:500],
+                        },
+                    )
+                    return
                 self._send_json(200, payload)
                 return
             self._send_json(404, {"ok": False, "error": "not_found", "message": path})
