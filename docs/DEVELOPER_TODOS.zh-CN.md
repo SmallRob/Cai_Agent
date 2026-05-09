@@ -6,13 +6,13 @@
 
 ## 当前开发队列
 
-> **当前无顺位开发单**。下一批候选见 [`NEXT_ACTIONS.zh-CN.md`](NEXT_ACTIONS.zh-CN.md) **后续队列**（如 **`CTX-COMPACT-N10`** / **`HM-N12`** 真实云 POC 须在 **`CLOUD_RUNTIME_OOS`** §4.1 全满足后另独立项）。
+> **当前无顺位开发单**。下一批候选见 [`NEXT_ACTIONS.zh-CN.md`](NEXT_ACTIONS.zh-CN.md) **后续队列**（如 **`HM-N12`** 真实云 POC 须在 **`CLOUD_RUNTIME_OOS`** §4.1 全满足后另独立项；**`CTX-COMPACT-N10`** 离线 fixtures 已落地）。
 
 ## 执行顺序
 
 1. **平台外表面 Sprint**：总表 [`PLATFORM_SURFACES_SPRINT_PLAN.zh-CN.md`](PLATFORM_SURFACES_SPRINT_PLAN.zh-CN.md)；**`OPS-N01-D01`/`OPS-N02-D01`**、**`GW-N02-D01`/`GW-N02-D02`**、**`HM-N12-D01`**（云 OOS 文档 + interface 元数据）与 **`HM-N08-M01`** 已合入。
 2. **解限与安全**：全景清单 [`SAFETY_UNRESTRICTED_BACKLOG.zh-CN.md`](SAFETY_UNRESTRICTED_BACKLOG.zh-CN.md)；**P0–P4**、**`SAFETY-N08-D01`** 与 **`SAFETY-N07-D01/D02`** 已收口；更深项须另立项。
-3. 若并行上下文面：优先 **`CTX-COMPACT-N10`**（**`CTX-COMPACT-N09`** 已在派发层落地）。
+3. 上下文压缩：**`CTX-COMPACT-N09`/`N10`** 已落地；真模型长会话对比见 **`docs/qa/CTX_COMPACT_N10_REGRESSION.zh-CN.md`**（CI 外可选）。
 4. Gateway 与联邦：**`GW-N02-D01`/`GW-N02-D02`** 已交付（联邦路由审计落盘；若扩真实跨 workspace 代理执行须另 RFC）。
 
 ## 每个任务的统一要求

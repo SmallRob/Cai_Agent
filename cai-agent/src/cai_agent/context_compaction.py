@@ -619,13 +619,24 @@ def evaluate_compaction_quality(
     required_markers: list[str] | tuple[str, ...] = (),
     min_token_reduction_ratio: float = 0.20,
     min_score: float = 0.80,
+    summary_payload: dict[str, Any] | None = None,
+    summary_source: str = "heuristic",
+    fallback_reason: str | None = None,
 ) -> ContextCompactionEvalResult:
-    """Evaluate deterministic compaction quality for regression checks."""
+    """Evaluate compaction quality for regression checks.
+
+    By default runs the heuristic summarizer inside :func:`compact_messages`.
+    When ``summary_payload`` is set, simulates the graph ``llm`` branch (fixed
+    JSON summary) without calling a model — used by offline goldens.
+    """
     original = [dict(m) for m in messages if isinstance(m, dict)]
     comp = compact_messages(
         original,
         keep_tail_messages=keep_tail_messages,
         summary_max_chars=summary_max_chars,
+        summary_payload=summary_payload,
+        summary_source=summary_source,
+        fallback_reason=fallback_reason,
     )
     retention_payload = evaluate_compaction_retention(
         original,
@@ -668,9 +679,11 @@ def evaluate_compaction_quality(
     ]
     score = sum(score_parts) / len(score_parts)
     passed = score >= float(min_score) and all(bool(v) for v in checks.values())
+    variant = "llm_simulated" if summary_payload else "heuristic"
     payload = {
         "schema_version": "context_compaction_eval_v1",
         "generated_at": datetime.now(UTC).isoformat(),
+        "evaluation_variant": variant,
         "passed": bool(passed),
         "score": round(float(score), 4),
         "min_score": float(min_score),

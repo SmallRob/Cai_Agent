@@ -18,6 +18,11 @@
   "properties": {
     "schema_version": { "const": "context_compaction_eval_v1" },
     "generated_at": { "type": "string" },
+    "evaluation_variant": {
+      "type": "string",
+      "enum": ["heuristic", "llm_simulated"],
+      "description": "heuristic: default summarizer; llm_simulated: fixed LLM-shaped summary_payload (offline goldens, CTX-COMPACT-N10)"
+    },
     "passed": { "type": "boolean" },
     "score": { "type": "number", "minimum": 0, "maximum": 1 },
     "min_score": { "type": "number", "minimum": 0, "maximum": 1 },

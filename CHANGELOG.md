@@ -4,6 +4,8 @@
 
 ### Unreleased
 
+- **CTX-COMPACT-N10 context compaction regression fixtures**: Added `cai-agent/tests/fixtures/context_compaction_regression/n10_case_*.json` long chat transcripts; pytest `test_context_compaction_regression_fixtures.py` runs `evaluate_compaction_quality` in **heuristic** mode and with injected **LLM-shaped** `summary_payload` (no HTTP). `context_compaction_eval_v1` gains optional **`evaluation_variant`** (`heuristic` \| `llm_simulated`); `evaluate_compaction_quality` accepts optional `summary_payload` / `summary_source` / `fallback_reason`. Docs: **`docs/qa/CTX_COMPACT_N10_REGRESSION.zh-CN.md`**, **`docs/CONTEXT_AND_COMPACT.zh-CN.md`**, schema README.
+
 - **CTX-COMPACT-N09 outgoing LLM privacy filter**: Added **`[privacy].filter`** (`off` / `light` / `strict`, default `off`) with env override **`CAI_PRIVACY_FILTER`**. **`privacy_filter.py`** applies regex-only redaction (credential-shaped tokens, light PII, absolute paths; stricter hex/SSN-style in `strict`) to chat **`content`** on **`llm_factory`** adapter dispatches and inside **`model_gateway.chat_response`** (covers API **`chat_completion_response`**, chat-smoke, and any direct gateway caller). Not NLP, no disk scan, no extra upload. Tests: **`test_privacy_filter.py`**.
 
 - **HM-N12-D01 cloud runtime OOS contract metadata**: Extended **`runtime_backend_interface_v1`** entries for **`modal`** and **`daytona`** with **`oos_policy`**, **`oos_doc`**, **`gate_ref`**, and **`implementation_note`**; added **`CLOUD_RUNTIME_OOS.zh-CN.md`** §4.3 (HM-N12-D01 anchor). No cloud execution code. Tests: **`test_runtime_local`**.

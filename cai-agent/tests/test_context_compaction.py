@@ -299,6 +299,7 @@ def test_context_compaction_eval_v1_schema_matches_fixture() -> None:
     assert schema["properties"]["schema_version"]["const"] == "context_compaction_eval_v1"
     _assert_required(schema, payload)
     assert payload["schema_version"] == "context_compaction_eval_v1"
+    assert payload.get("evaluation_variant") == "heuristic"
     assert payload["checks"]["compacted"] is True
     assert payload["message_counts"]["compacted"] < payload["message_counts"]["original"]
     assert payload["estimated_tokens"]["reduction_ratio"] > 0

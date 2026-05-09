@@ -23,12 +23,12 @@
 | 顺位 | 任务 ID | 目标 | 建议代码入口 | 验收门槛 |
 |---|---|---|---|---|
 | 1 | `CTX-COMPACT-N09` | **Done（2026-05-10）** 发往模型的消息正文启发式脱敏（凭据类、轻量 PII、绝对路径；非 NLP） | `privacy_filter.py`、`llm_factory.py`、`config.py`；`[privacy].filter` / `CAI_PRIVACY_FILTER` | pytest `test_privacy_filter.py` + 全量 + smoke |
-| 2 | `CTX-COMPACT-N10` | 真实模型回归样本集：构造长会话 fixtures，分别跑 `heuristic` 与 `llm` 模式比较质量 | `cai-agent/tests/fixtures/`、`docs/qa/` | QA run 记录真实模型或 mock profile 结果；压缩质量基线写入 docs |
+| 2 | `CTX-COMPACT-N10` | **Done（2026-05-10）** 离线长会话 fixtures：`n10_case_*.json`；启发式 + 注入 LLM 形摘要的 `evaluate_compaction_quality`；`evaluation_variant`；QA 文档 | `cai-agent/tests/fixtures/context_compaction_regression/`、`docs/qa/CTX_COMPACT_N10_REGRESSION.zh-CN.md`、`context_compaction.py` | pytest `test_context_compaction_regression_fixtures` + 全量 + smoke |
 
 ## 推荐实现顺序
 
 1. `CTX-COMPACT-N09` 已在 LLM 派发层收口；若需 summary/eval 落盘额外脱敏，可在 `context_compaction.py` 或导出路径上叠一层同模块调用。
-2. `N10` 作为整体质量基线和发布前验收。
+2. `N10` 离线基线已落地；若需 **真模型** 长会话对比，按 `docs/qa/CTX_COMPACT_N10_REGRESSION.zh-CN.md` 可选步骤在 CI 外执行。
 
 ## QA 测试矩阵
 

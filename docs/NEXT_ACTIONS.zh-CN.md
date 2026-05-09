@@ -14,11 +14,12 @@
 
 | 顺位 | 任务 | 状态 | 验收 |
 |---|---|---|---|
-| 1 | `CTX-COMPACT-N10` | Ready | 真实模型回归样本集（fixtures + QA 基线） |
+| — | （无） | — | 顺位工单见 [`DEVELOPER_TODOS.zh-CN.md`](DEVELOPER_TODOS.zh-CN.md)；**`CTX-COMPACT-N10`** 离线 fixtures 已合入，可选真模型步骤见 [`docs/qa/CTX_COMPACT_N10_REGRESSION.zh-CN.md`](qa/CTX_COMPACT_N10_REGRESSION.zh-CN.md)。 |
 
 ## 后续队列
 
-- `CTX-COMPACT-N10`：真实模型回归样本集
+- 云 runtime 真实 POC：须满足 **`CLOUD_RUNTIME_OOS.zh-CN.md`** 门槛后另独立项（**`HM-N12`**）。
+- 平台外表面：见 [`PLATFORM_SURFACES_SPRINT_PLAN.zh-CN.md`](PLATFORM_SURFACES_SPRINT_PLAN.zh-CN.md)。
 
 ## 条件与边界
 
@@ -32,6 +33,7 @@
 
 | 任务 | 日期 | 摘要 | 验证 |
 |---|---|---|---|
+| `CTX-COMPACT-N10` | 2026-05-10 | Offline long-session compaction fixtures (n10_case_*.json), heuristic + injected LLM-shaped summary eval, evaluation_variant on context_compaction_eval_v1, QA doc and schema update. | python -m pytest -q cai-agent/tests: PASS (1024 passed, 20 subtests)<br>python scripts/smoke_new_features.py: NEW_FEATURE_CHECKS_OK |
 | `CTX-COMPACT-N09` | 2026-05-10 | Outgoing LLM privacy filter: [privacy].filter and CAI_PRIVACY_FILTER (off/light/strict), privacy_filter.py, wired in llm_factory for all chat dispatches including OpenAI-compatible API. | python -m pytest -q cai-agent/tests: PASS (1019 passed, 20 subtests)<br>python scripts/smoke_new_features.py: NEW_FEATURE_CHECKS_OK |
 | `HM-N12-D01` | 2026-05-10 | CLOUD_RUNTIME_OOS §4.3 + runtime_backend_interface_v1 oos_policy/oos_doc/gate_ref for modal and daytona; no cloud execution. | python -m pytest -q cai-agent/tests: PASS (1010 passed, 20 subtests)<br>python scripts/smoke_new_features.py: NEW_FEATURE_CHECKS_OK |
 | `GW-N02-D02` | 2026-05-10 | route-preview dry_run:false: federation-route-audit.jsonl (gateway_federation_route_audit_v1), env CAI_GATEWAY_FEDERATION_ROUTE_EXECUTE, allowlist, optional execute token header; CLI --execute. | python -m pytest -q cai-agent/tests: PASS (1010 passed, 20 subtests)<br>python scripts/smoke_new_features.py: NEW_FEATURE_CHECKS_OK |

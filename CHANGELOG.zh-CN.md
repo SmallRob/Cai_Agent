@@ -6,6 +6,8 @@
 
 ### Unreleased
 
+- **CTX-COMPACT-N10 上下文压缩离线回归样本**：新增 **`cai-agent/tests/fixtures/context_compaction_regression/n10_case_*.json`** 长会话；**`test_context_compaction_regression_fixtures.py`** 分别跑启发式与注入 **LLM 形** `summary_payload` 的 **`evaluate_compaction_quality`**（不调用模型）。**`context_compaction_eval_v1`** 增加可选 **`evaluation_variant`**（**`heuristic` / `llm_simulated`**）；**`evaluate_compaction_quality`** 支持可选 **`summary_payload`** / **`summary_source`** / **`fallback_reason`**。文档：**`docs/qa/CTX_COMPACT_N10_REGRESSION.zh-CN.md`**、**`docs/CONTEXT_AND_COMPACT.zh-CN.md`**、schema README。
+
 - **CTX-COMPACT-N09 发往模型的隐私过滤**：新增 **`[privacy].filter`**（**`off` / `light` / `strict`**，默认 **`off`**），环境变量 **`CAI_PRIVACY_FILTER`** 优先。**`privacy_filter.py`** 以纯正则做启发式脱敏（凭据形态、轻量 PII、绝对路径；**`strict`** 额外长十六进制与 SSN 形）；在 **`llm_factory`** 适配器派发路径与 **`model_gateway.chat_response`** 内统一作用于消息 **`content`**（覆盖 OpenAI 兼容 **`/v1/chat/completions`**、**`models ping --chat-smoke`** 等所有走 gateway 的出站正文）。**非 NLP**、**不扫描磁盘**、**不外传**。回归 **`test_privacy_filter.py`** + 全量 pytest + smoke。
 
 - **HM-N12-D01 云运行 OOS 机读锚点**：**`runtime_backend_interface_v1`** 中 **`modal`** / **`daytona`** 增补 **`oos_policy`**、**`oos_doc`**、**`gate_ref`**、**`implementation_note`**；**[`CLOUD_RUNTIME_OOS.zh-CN.md`](docs/CLOUD_RUNTIME_OOS.zh-CN.md)** 新增 **§4.3**（**HM-N12-D01**）；不实现真实云执行。回归 **`test_runtime_local`**。
