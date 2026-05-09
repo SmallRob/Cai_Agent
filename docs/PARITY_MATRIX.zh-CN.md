@@ -58,7 +58,7 @@
 | 多平台 Gateway（Telegram / Discord / Slack / Teams） | Hermes | `Done` / `Next` | **已对齐**：Telegram full；Discord/Slack/Teams mvp。Teams 入口为 **`gateway teams bind|get|list|unbind|allow|health|manifest|serve-webhook`**，落盘 **`gateway_teams_map_v1`**，并纳入 **`gateway platforms`** / **`gateway maps`**；**`gateway prod-status --json`** 输出 **`gateway_production_summary_v1`** 本地生产状态摘要。**仍为 Next**：频道监控、压测与更完整 Bot Framework 鉴权部署。 |
 | Docker runtime backend | Hermes | `Done` / `Next` | **已对齐**：`[runtime] backend="docker"` 支持既有 **`container`** / `docker exec` 模式与新增 **`image`** / `docker run --rm` 模式；支持 **`workdir`**、**`volume_mounts`**、**`cpus`**、**`memory`**，并在 **`doctor_runtime_v1.describe`** 暴露 mode/image/workdir/volumes/limits。`RT-N01` 已补 mock / doctor / opt-in real smoke 验证矩阵；真实 CI 镜像矩阵仍按环境条件启用。 |
 | SSH runtime backend | Hermes | `Done` / `Next` | **已对齐**：`[runtime] backend="ssh"` 支持 key、`known_hosts`、严格 host key、连接超时诊断；**`doctor_runtime_v1.describe`** 暴露 `ssh_binary_present`、key/known_hosts 存在性与 audit 配置；可选 **`runtime_ssh_audit_v1`** JSONL 审计默认不记录命令明文。`RT-N01` 已补 mock / doctor / opt-in real smoke 验证矩阵；真实远端 smoke 与多主机编排仍按环境条件启用。 |
-| 云运行后端（Modal / Daytona 等按需沙箱） | Hermes / 平台化 | `OOS` | 默认交付为本机 **`cai-agent`** 进程；安全与范围理由、替代路径见 [CLOUD_RUNTIME_OOS.zh-CN.md](CLOUD_RUNTIME_OOS.zh-CN.md) |
+| 云运行后端（Modal / Daytona 等按需沙箱） | Hermes / 平台化 | `OOS` | 默认交付为本机 **`cai-agent`** 进程；理由与替代路径见 [CLOUD_RUNTIME_OOS.zh-CN.md](CLOUD_RUNTIME_OOS.zh-CN.md)；**`runtime list`** 内 **`runtime_backend_interface_v1`** 对 **`modal`/`daytona`** 标注 **`oos_policy`**（**`HM-N12-D01`** / §4.3） |
 | 大规模社区技能库本体 | ECC | `MCP` / `Next` | 以导出格式与外部包渐进吸收，不阻塞核心发版 |
 
 ---

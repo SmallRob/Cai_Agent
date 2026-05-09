@@ -352,7 +352,7 @@
 ## `runtime list` / `runtime test` / `doctor.runtime`（`--json`）
 
 - **实现**：`cai_agent.runtime.registry`、`cai_agent.runtime.docker`；CLI 在 **`__main__.py`** 的 **`runtime`** 分支分发，`doctor --json` 内嵌 **`runtime`**。
-- **`runtime list --json`**：stdout **`runtime_registry_v1`**；顶层含 **`backends[]`**（如 `local` / `docker` / `ssh` / `modal` / `daytona` / `singularity`）。
+- **`runtime list --json`**：stdout **`runtime_registry_v1`**；顶层含 **`backends[]`**（如 `local` / `docker` / `ssh` / `modal` / `daytona` / `singularity`）。内嵌 **`interface.backends.modal` / `daytona`**（**`runtime_backend_interface_v1`**）在 **HM-N12-D01** 起携带 **`oos_policy`**、**`oos_doc`**、**`gate_ref`**，与 **[`CLOUD_RUNTIME_OOS.zh-CN.md`](../CLOUD_RUNTIME_OOS.zh-CN.md)** §4.3 对齐；**不**表示默认发行物已交付可生产云执行。
 - **`runtime test --backend docker --json`**：stdout **`runtime_test_v1`**；顶层含 **`backend`**、**`returncode`**、**`stdout`**、**`stderr`**、**`error_kind`**、**`exists`**。
 - **`doctor --json.runtime`**：内嵌 **`doctor_runtime_v1`**；顶层含 **`configured_backend`**、**`resolved_backend`**、**`reachable`**、**`describe`**。
 - **Docker describe（HM-06b）**：`describe` 对 docker 后端暴露 **`mode`**（`exec` / `run` / `unconfigured`）、**`container`**、**`image`**、**`workdir`**、**`volume_mounts_count`**、**`volume_mounts`**、**`cpus`**、**`memory`**、**`exec_options_count`**。配置入口为 **`[runtime.docker]`**：`container_name` / `container`、`image`、`workdir`、`volume_mounts`、`exec_options`、`cpus`、`memory`。

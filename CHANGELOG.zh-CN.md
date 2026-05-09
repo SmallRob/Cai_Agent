@@ -6,6 +6,8 @@
 
 ### Unreleased
 
+- **HM-N12-D01 云运行 OOS 机读锚点**：**`runtime_backend_interface_v1`** 中 **`modal`** / **`daytona`** 增补 **`oos_policy`**、**`oos_doc`**、**`gate_ref`**、**`implementation_note`**；**[`CLOUD_RUNTIME_OOS.zh-CN.md`](docs/CLOUD_RUNTIME_OOS.zh-CN.md)** 新增 **§4.3**（**HM-N12-D01**）；不实现真实云执行。回归 **`test_runtime_local`**。
+
 - **GW-N02-D02 联邦 route-preview 执行（审计落盘）**：**`gateway route-preview --execute`** 与 **`POST /v1/gateway/route-preview`**（**`dry_run:false`**）在 **`CAI_GATEWAY_FEDERATION_ROUTE_EXECUTE`**、目标 workspace 白名单（**`CAI_GATEWAY_FEDERATION_ALLOWED_WORKSPACES`**）与目标 **`target_profile_id`** 校验通过时，向源工作区 **`.cai/gateway/federation-route-audit.jsonl`** 追加 **`gateway_federation_route_audit_v1`**；可选 **`CAI_GATEWAY_FEDERATION_ROUTE_EXECUTE_TOKEN`** 与头 **`X-Cai-Federation-Execute-Token`**。不调用 LLM、不拉起子进程。实现 **`build_gateway_proxy_route_preview`**（`gateway_lifecycle.py`）；API/CLI；测试与 schema README。
 
 - **GW-N02-D01 Gateway Slash 部署自检**：CLI **`cai-agent gateway slash-deploy-check --json`** 与 **`GET /v1/gateway/slash-deploy-check`** 返回 **`gateway_slash_deploy_check_v1`**（Slack / Discord / Teams；含可选 API 探测与 **`ok: null`** 的厂商控制台步骤）。**`gateway prod-status --json`** 内嵌同结构字段 **`slash_deploy_check`**。实现 **`build_gateway_slash_deploy_check_payload`**（`gateway_production.py`）；OpenAPI；schema README；smoke + 测试。

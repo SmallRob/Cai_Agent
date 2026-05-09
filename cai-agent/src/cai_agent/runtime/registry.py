@@ -85,10 +85,22 @@ def build_runtime_backend_interface_payload() -> dict[str, Any]:
             "modal": {
                 "status": "conditional_stub",
                 "config_keys": ["runtime_modal_app_name", "runtime_modal_hibernate_idle_seconds"],
+                "oos_policy": "out_of_scope_default_delivery",
+                "oos_doc": "docs/CLOUD_RUNTIME_OOS.zh-CN.md",
+                "gate_ref": "HM-N11-D01 §4.1",
+                "implementation_note": (
+                    "Registry stub only; real Modal execution requires CLOUD_RUNTIME_OOS gates + separate RFC."
+                ),
             },
             "daytona": {
                 "status": "conditional_stub",
                 "config_keys": ["runtime_daytona_workspace"],
+                "oos_policy": "out_of_scope_default_delivery",
+                "oos_doc": "docs/CLOUD_RUNTIME_OOS.zh-CN.md",
+                "gate_ref": "HM-N11-D01 §4.1",
+                "implementation_note": (
+                    "CLI-detect stub; automated exec remains unimplemented until gates are met; see runtime/daytona_stub.py."
+                ),
             },
             "singularity": {
                 "status": "conditional_stub",

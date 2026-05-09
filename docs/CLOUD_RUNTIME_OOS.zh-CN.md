@@ -53,6 +53,18 @@
 - 不新增云端密钥分发、工作区同步、远程会话持久化代码路径。
 - 不改变当前默认运行策略：继续以 `local/docker/ssh` 为主。
 
+## 4.3 HM-N12-D01：门槛复核与机读契约锚点（非 POC）
+
+本小节用于 **HM-N12-D01** 收口：在 **§4.1 门槛未全部满足前**，仓库**不**进入 Modal/Daytona 真实 POC 开发；仅做文档对齐与 **`runtime_backend_interface_v1`** 元数据说明，避免集成方误以为默认发行物已包含可生产云执行。
+
+| 锚点 | 说明 |
+|------|------|
+| **`build_runtime_backend_interface_payload()`** | `cai-agent/src/cai_agent/runtime/registry.py`；`backends.modal` / `backends.daytona` 含 **`oos_policy`**、**`oos_doc`**、**`gate_ref`**（指向 **§4.1** / **HM-N11-D01**）。 |
+| **运行时注册表** | `RUNTIME_REGISTRY` 中 **`modal`** → `ModalRuntime`，**`daytona`** → `DaytonaRuntime`（stub；见对应 `*_stub.py`）。 |
+| **`runtime list --json`** | 通过 **`list_runtimes_payload()`** 暴露上述 interface；**不**表示云后端已 GA。 |
+
+**维护者自检**：立项前请逐项对照 **§4.1**（授权 / 安全 / 合规 / 产品 / 工程）；未打勾前不得将 interface 中 **`status`** 从 **`conditional_stub`** 改为 **`ga`**。
+
 ## 5. 索引
 
 - 产品表：[PRODUCT_PLAN.zh-CN.md](PRODUCT_PLAN.zh-CN.md)（§一「运行后端」、§三之二 **§一 P2**）

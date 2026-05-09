@@ -18,7 +18,7 @@
 2. **A2**：~~`OPS-N02-D01`~~ **Done**：**`GET /v1/ops/action-audit`**（**`ops_action_audit_query_v1`**）+ OpenAPI + pytest；下一小步：更细粒度 **operator 路由**（与联邦 **`route-preview`** 审计面衔接时再评估）。
 3. **B1**：~~`GW-N02-D01`~~ **Done**：**`gateway slash-deploy-check`** / **`GET /v1/gateway/slash-deploy-check`**（**`gateway_slash_deploy_check_v1`**）+ **`prod-status.slash_deploy_check`**。
 4. **B2**：~~`GW-N02-D02`~~ **Done**：**`route-preview`** **`dry_run:false`** 联邦审计落盘（环境开关 + 白名单 + 可选 token）；不自动跑 LLM（后续若扩真实代理执行须另 RFC）。
-5. **C1**：`HM-N12-D01`  复核 `CLOUD_RUNTIME_OOS` 门槛；通过后再做 Modal/Daytona **stub + 配置键草案**。
+5. **C1**：~~`HM-N12-D01`~~ **Done（契约层）**：**`CLOUD_RUNTIME_OOS`** §4.3 + **`runtime_backend_interface_v1`** 云 stub **OOS 元数据**；**真实** Modal/Daytona POC 仍须 §4.1 全满足后另独立项。
 6. **D1**：`HM-N08-M01`  Voice MCP runbook 与配置示例（无默认实时语音）。
 
 ## 验证（每合并一项）

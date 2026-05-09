@@ -26,6 +26,12 @@ def test_registry_list_schema() -> None:
     ssh = backends.get("ssh") or {}
     assert docker.get("interface_alignment", {}).get("base_ops_aligned") is True
     assert ssh.get("interface_alignment", {}).get("base_ops_aligned") is True
+    modal = backends.get("modal") or {}
+    daytona = backends.get("daytona") or {}
+    assert modal.get("status") == "conditional_stub"
+    assert modal.get("oos_policy") == "out_of_scope_default_delivery"
+    assert "CLOUD_RUNTIME_OOS" in str(modal.get("oos_doc") or "")
+    assert daytona.get("oos_policy") == "out_of_scope_default_delivery"
 
 
 def test_get_runtime_backend_defaults() -> None:
