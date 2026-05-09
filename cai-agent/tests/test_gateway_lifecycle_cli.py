@@ -228,22 +228,29 @@ class GatewayLifecycleCliTests(unittest.TestCase):
             profile_id = load_agent_settings_for_workspace(workspace=root.resolve()).profiles[0].id
             buf = io.StringIO()
             with patch.dict(os.environ, {"CAI_GATEWAY_FEDERATION_ROUTE_EXECUTE": "1"}, clear=False):
-                with patch("cai_agent.__main__.os.getcwd", return_value=str(root)):
-                    with redirect_stdout(buf):
-                        rc = main(
-                            [
-                                "gateway",
-                                "route-preview",
-                                "--platform",
-                                "telegram",
-                                "--channel-id",
-                                "1:2",
-                                "--target-profile-id",
-                                profile_id,
-                                "--execute",
-                                "--json",
-                            ],
-                        )
+                # CI may set CAI_GATEWAY_FEDERATION_ROUTE_EXECUTE_TOKEN; without --execute-token the
+                # commit path fails with federation_execute_token_mismatch (see test_api_http_server).
+                saved_tok = os.environ.pop("CAI_GATEWAY_FEDERATION_ROUTE_EXECUTE_TOKEN", None)
+                try:
+                    with patch("cai_agent.__main__.os.getcwd", return_value=str(root)):
+                        with redirect_stdout(buf):
+                            rc = main(
+                                [
+                                    "gateway",
+                                    "route-preview",
+                                    "--platform",
+                                    "telegram",
+                                    "--channel-id",
+                                    "1:2",
+                                    "--target-profile-id",
+                                    profile_id,
+                                    "--execute",
+                                    "--json",
+                                ],
+                            )
+                finally:
+                    if saved_tok is not None:
+                        os.environ["CAI_GATEWAY_FEDERATION_ROUTE_EXECUTE_TOKEN"] = saved_tok
             self.assertEqual(rc, 0)
             payload = json.loads(buf.getvalue().strip())
             self.assertEqual(payload.get("schema_version"), "gateway_proxy_route_v1")
