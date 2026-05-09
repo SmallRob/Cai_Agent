@@ -4,6 +4,8 @@
 
 ### Unreleased
 
+- **OpenAI-compatible reasoning channel fallback**: When `message.content` is empty but `reasoning_content` / `reasoning` has text (common for Qwen3-style endpoints), `normalize_assistant_text` now wraps that text in a parseable `{"type":"finish","message":...}` so the graph and built-in Web UI show the model output instead of only an `[empty-completion]` error stub. Long reasoning is capped (200k chars) with a truncation note.
+
 - **CTX-COMPACT-N10 context compaction regression fixtures**: Added `cai-agent/tests/fixtures/context_compaction_regression/n10_case_*.json` long chat transcripts; pytest `test_context_compaction_regression_fixtures.py` runs `evaluate_compaction_quality` in **heuristic** mode and with injected **LLM-shaped** `summary_payload` (no HTTP). `context_compaction_eval_v1` gains optional **`evaluation_variant`** (`heuristic` \| `llm_simulated`); `evaluate_compaction_quality` accepts optional `summary_payload` / `summary_source` / `fallback_reason`. Docs: **`docs/qa/CTX_COMPACT_N10_REGRESSION.zh-CN.md`**, **`docs/CONTEXT_AND_COMPACT.zh-CN.md`**, schema README.
 
 - **CTX-COMPACT-N09 outgoing LLM privacy filter**: Added **`[privacy].filter`** (`off` / `light` / `strict`, default `off`) with env override **`CAI_PRIVACY_FILTER`**. **`privacy_filter.py`** applies regex-only redaction (credential-shaped tokens, light PII, absolute paths; stricter hex/SSN-style in `strict`) to chat **`content`** on **`llm_factory`** adapter dispatches and inside **`model_gateway.chat_response`** (covers API **`chat_completion_response`**, chat-smoke, and any direct gateway caller). Not NLP, no disk scan, no extra upload. Tests: **`test_privacy_filter.py`**.

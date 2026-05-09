@@ -2,10 +2,10 @@
 
 Triggered by LM Studio + Qwen3-reasoning style responses where
 ``choices[0].message.content`` is ``""`` and the entire model output ends up
-in ``message.reasoning_content``. Before the fix the agent would crash on
-``extract_json_object("")`` and spin ``max_iterations``; now the adapter
-synthesises a ``{"type":"finish", ...}`` envelope so the graph stops cleanly
-with an actionable diagnostic.
+in ``message.reasoning_content``. The adapter wraps that text in a
+``{"type":"finish","message":...}`` envelope so the graph parses once and UIs
+can show it. Pure empty completions still use an ``[empty-completion]``
+diagnostic finish envelope.
 """
 from __future__ import annotations
 
@@ -90,10 +90,10 @@ class OpenAICompatEmptyContentTests(unittest.TestCase):
 
         obj = json.loads(out)
         self.assertEqual(obj["type"], "finish")
-        self.assertIn("empty-completion", obj["message"])
+        self.assertIn("让我想想", obj["message"])
         self.assertIn("reasoning_tokens=22858", obj["message"])
         self.assertIn("finish_reason=stop", obj["message"])
-        self.assertIn("reasoning", obj["message"])
+        self.assertIn("reasoning_content", obj["message"])
 
     def test_empty_content_no_reasoning_returns_generic_advice(self) -> None:
         payload = {
@@ -190,6 +190,7 @@ class OpenAICompatEmptyContentTests(unittest.TestCase):
         out = self._call(payload)
         obj = llm_mod.extract_json_object(out)
         self.assertEqual(obj["type"], "finish")
+        self.assertIn("stuck", str(obj.get("message", "")))
 
 
 class AnthropicEmptyContentTests(unittest.TestCase):

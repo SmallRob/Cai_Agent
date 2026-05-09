@@ -342,11 +342,14 @@ def normalize_assistant_text(
     """Return a non-empty assistant text, synthesising a ``finish`` envelope
     when the model produced no usable output.
 
-    Triggered by reasoning-style models (Qwen3 / DeepSeek-R1 / LM Studio) which
-    may emit ``content=""`` together with a huge ``reasoning_content`` once the
-    reasoning budget is exhausted. Returning a finish envelope lets the graph
-    surface the problem and stop cleanly instead of crashing on JSON parsing
-    or spinning ``max_iterations``.
+    Reasoning-style OpenAI-compatible models (Qwen3 / DeepSeek-R1 / LM Studio)
+    may emit ``content=""`` while putting the visible text in ``reasoning_content``.
+    In that case we wrap that text in a ``finish`` JSON so the graph parses once
+    and the Web UI shows the answer instead of only an error stub.
+
+    If there is no ``reasoning_content`` either, we still emit a diagnostic
+    ``finish`` envelope to avoid ``extract_json_object`` crashes or iteration
+    spin.
     """
     raw = _stringify_content(content)
     text = raw.strip()
@@ -356,11 +359,59 @@ def normalize_assistant_text(
         if stripped:
             return stripped
 
+    reasoning_raw = message.get("reasoning_content") or message.get("reasoning")
+    reasoning = _stringify_content(reasoning_raw).strip()
+    if reasoning:
+        return _reasoning_only_finish(
+            reasoning_text=reasoning,
+            choice=choice,
+            usage=usage if isinstance(usage, dict) else {},
+            provider_label=provider_label,
+        )
+
     return _empty_content_finish(
         message=message,
         choice=choice,
         usage=usage,
         provider_label=provider_label,
+    )
+
+
+def _reasoning_only_finish(
+    *,
+    reasoning_text: str,
+    choice: dict[str, Any],
+    usage: dict[str, Any],
+    provider_label: str,
+) -> str:
+    """Build a parseable finish envelope whose message is the model reasoning text."""
+    max_chars = 200_000
+    body = reasoning_text
+    if len(body) > max_chars:
+        body = body[:max_chars].rstrip() + "\n\n… [reasoning 过长已截断]"
+
+    finish_reason = choice.get("finish_reason") if isinstance(choice, dict) else None
+    reasoning_tokens: int | None = None
+    details = usage.get("completion_tokens_details") if isinstance(usage, dict) else None
+    if isinstance(details, dict):
+        rt = details.get("reasoning_tokens")
+        if isinstance(rt, int):
+            reasoning_tokens = rt
+    meta_parts: list[str] = [f"provider={provider_label}"]
+    if finish_reason:
+        meta_parts.append(f"finish_reason={finish_reason}")
+    if isinstance(reasoning_tokens, int):
+        meta_parts.append(f"reasoning_tokens={reasoning_tokens}")
+    meta = "; ".join(meta_parts)
+
+    footer = (
+        f"\n\n—\n· [{meta}]\n"
+        "· 主字段 content 为空，已使用 reasoning_content 作为展示回答。"
+        "若工具调用 JSON 不稳定，请在 profile 中换用 Instruct 类模型或调低 temperature。"
+    )
+    return json.dumps(
+        {"type": "finish", "message": body + footer},
+        ensure_ascii=False,
     )
 
 
