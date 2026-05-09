@@ -35,6 +35,7 @@ from cai_agent.gateway_production import (
     build_gateway_channel_monitor_payload,
     build_gateway_federation_summary_payload,
     build_gateway_slash_catalog_payload,
+    build_gateway_slash_deploy_check_payload,
 )
 from cai_agent.model_gateway import build_model_capabilities_payload
 from cai_agent.llm_factory import chat_completion_response
@@ -285,6 +286,13 @@ def build_api_openapi_v1() -> dict[str, Any]:
                 method="getGatewaySlashCatalog",
                 summary="Gateway slash command catalog",
                 schema_version="gateway_slash_catalog_v1",
+            ),
+        },
+        "/v1/gateway/slash-deploy-check": {
+            "get": _op(
+                method="getGatewaySlashDeployCheck",
+                summary="Gateway slash/command surface deploy checklist",
+                schema_version="gateway_slash_deploy_check_v1",
             ),
         },
         "/v1/gateway/route-preview": {"post": _op(method="postGatewayRoutePreview", summary="Dry-run gateway route preview", schema_version="gateway_proxy_route_v1", request_schema=route_preview_body)},
@@ -902,6 +910,9 @@ class AgentApiRequestHandler(BaseHTTPRequestHandler):
                 return
             if path == "/v1/gateway/slash-catalog":
                 self._send_json(200, build_gateway_slash_catalog_payload(ws))
+                return
+            if path == "/v1/gateway/slash-deploy-check":
+                self._send_json(200, build_gateway_slash_deploy_check_payload(ws))
                 return
         except Exception as e:
             self._send_json(500, {"ok": False, "error": "internal_error", "message": str(e)[:500]})

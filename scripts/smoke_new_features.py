@@ -8,7 +8,7 @@ platforms + ops dashboard + skills hub manifest/install + ``skills hub suggest``
 ``insights``/``insights --json --cross-domain``/``board --json``, ``memory health`` + ``memory state`` + ``memory provider --json`` + ``memory user-model --json`` + ``memory user-model export``
 + ``memory user-model store init/list`` + ``learn``/``query`` + ``export --with-store``, ``ecc -w <dir> layout --json`` + ``ecc sync-home --dry-run`` + ``ecc pack-manifest --json`` + ``ecc pack-import --json`` (``ingest_gate``) + ``export``/``ecc pack-repair --json`` + ``ecc inventory --json`` + ``ecc home-diff --json``, plus
 init --json, schedule add + list + rm + stats --json, gateway telegram list
---json, gateway discord list/health --json, gateway slack bind/health --json, gateway teams bind/health/manifest --json, gateway status/prod-status --json, gateway telegram continue-hint --json, recall --json, ``recall-index doctor --json`` (missing index → exit 2),
+--json, gateway discord list/health --json, gateway slack bind/health --json, gateway teams bind/health/manifest --json, gateway status/prod-status --json (``slash_deploy_check``), gateway slash-deploy-check --json, gateway telegram continue-hint --json, recall --json, ``recall-index doctor --json`` (missing index → exit 2),
 ``recall-index info --json`` (missing index → ok false / index_not_found, exit 0),
 ``recall --evaluate --json`` (**recall_evaluation_v1**，无需 ``--query``），
 ``runtime list --json``（含 docker/ssh 后端）、``models onboarding --json`` / ``models routing-test --json`` fallback candidates、``models clone --dry-run --json`` / ``models alias --json``、``gen_plugin_compat_snapshot --check``、``api serve --help``（HM-02b 子命令存在）、``api openapi --json`` 与
@@ -1305,6 +1305,18 @@ def main() -> int:
                     errs.append(f"gateway prod-status {pid} readiness_checklist missing")
                 if not diagnostics:
                     errs.append(f"gateway prod-status {pid} diagnostics missing")
+            sdc = gpo.get("slash_deploy_check") if isinstance(gpo.get("slash_deploy_check"), dict) else {}
+            if sdc.get("schema_version") != "gateway_slash_deploy_check_v1":
+                errs.append(f"gateway prod-status slash_deploy_check schema {sdc.get('schema_version')!r}")
+        gsd = _run([*cli, "gateway", "slash-deploy-check", "--json"], cwd=gw_td)
+        if gsd.returncode != 0:
+            errs.append(f"gateway slash-deploy-check exit {gsd.returncode} stderr={gsd.stderr!r}")
+        else:
+            sdo = json.loads((gsd.stdout or "").strip())
+            if sdo.get("schema_version") != "gateway_slash_deploy_check_v1":
+                errs.append(f"gateway slash-deploy-check schema {sdo.get('schema_version')!r}")
+            if (sdo.get("summary") or {}).get("platforms_count") != 3:
+                errs.append(f"gateway slash-deploy-check summary {sdo.get('summary')!r}")
         gch = _run([*cli, "gateway", "telegram", "continue-hint", "--json"], cwd=gw_td)
         if gch.returncode != 0:
             errs.append(f"gateway continue-hint exit {gch.returncode} stderr={gch.stderr!r}")

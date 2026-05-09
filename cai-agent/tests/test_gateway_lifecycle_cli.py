@@ -107,6 +107,9 @@ class GatewayLifecycleCliTests(unittest.TestCase):
             self.assertEqual(payload.get("schema_version"), "gateway_production_summary_v1")
             self.assertEqual(payload.get("summary", {}).get("platforms_count"), 7)
             self.assertEqual(payload.get("summary", {}).get("bindings_count"), 2)
+            sdc = payload.get("slash_deploy_check") or {}
+            self.assertEqual(sdc.get("schema_version"), "gateway_slash_deploy_check_v1")
+            self.assertEqual((sdc.get("summary") or {}).get("platforms_count"), 3)
             fed = payload.get("federation") or {}
             self.assertEqual(fed.get("schema_version"), "gateway_workspace_federation_v1")
             self.assertEqual(fed.get("workspaces_count"), 1)
@@ -297,3 +300,15 @@ class GatewayLifecycleCliTests(unittest.TestCase):
         self.assertIn("teams", platforms)
         slack_commands = platforms["slack"].get("commands") or []
         self.assertTrue(any(c.get("name") == "/cai <goal>" and c.get("execute_capable") for c in slack_commands))
+
+    def test_gateway_slash_deploy_check_json(self) -> None:
+        root = (Path.cwd() / ".tmp-test" / "gateway-slash-deploy-check-cli").resolve()
+        root.mkdir(parents=True, exist_ok=True)
+        buf = io.StringIO()
+        with patch("cai_agent.__main__.os.getcwd", return_value=str(root)):
+            with redirect_stdout(buf):
+                rc = main(["gateway", "slash-deploy-check", "--json"])
+        self.assertEqual(rc, 0)
+        payload = json.loads(buf.getvalue().strip())
+        self.assertEqual(payload.get("schema_version"), "gateway_slash_deploy_check_v1")
+        self.assertEqual((payload.get("summary") or {}).get("platforms_count"), 3)

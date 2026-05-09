@@ -4,6 +4,8 @@
 
 ### Unreleased
 
+- **GW-N02-D01 gateway slash deploy check**: CLI **`cai-agent gateway slash-deploy-check --json`** and **`GET /v1/gateway/slash-deploy-check`** return **`gateway_slash_deploy_check_v1`** (Slack / Discord / Teams checklist with optional vendor probes and manual `ok: null` steps). **`gateway prod-status --json`** embeds the same payload under **`slash_deploy_check`**. Code: **`build_gateway_slash_deploy_check_payload`** in `gateway_production.py`; OpenAPI; schema README; smoke + tests.
+
 - **OPS-N02-D01 ops action audit API**: **`cai-agent ops serve`** adds **`GET /v1/ops/action-audit`** (**`ops_action_audit_query_v1`**) with optional **`workspace`** or merged allowlist view; filters **`action`**, **`mode`**, **`ok`**, **`actor_prefix`**, **`limit`**. **`ops_workspaces_v1`** rows include **`action_audit_url`**. Code: **`build_ops_action_audit_query_payload`** in `ops_dashboard.py`; OpenAPI; docs. Tests: full pytest + smoke.
 
 - **Platform surfaces sprint plan**: Added [`docs/PLATFORM_SURFACES_SPRINT_PLAN.zh-CN.md`](docs/PLATFORM_SURFACES_SPRINT_PLAN.zh-CN.md); [`docs/ROADMAP_EXECUTION.zh-CN.md`](docs/ROADMAP_EXECUTION.zh-CN.md) §10 now tracks **`OPS-N01-D01`** (Done), **`OPS-N02-D01`**, **`GW-N02-D01/D02`**, **`HM-N12-D01`**, **`HM-N08-M01`** (Done); developer TODOs / next-actions / canvas gap tracker updated.

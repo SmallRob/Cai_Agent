@@ -8,16 +8,15 @@
 
 | 顺位 | 子任务 ID | 状态 | 开发目标 | 代码入口 | 完成门槛 |
 |---|---|---|---|---|---|
-| 1 | `GW-N02-D01` | Design | Slash 真实平台注册/部署检查（Slack 或 Discord 优先） | `gateway_production`、**`docs/GATEWAY_*`** | 清单 + `prod-status` 字段评审 |
-| 2 | `GW-N02-D02` | Design | 联邦执行链路（`route-preview` → 可选实跑，feature flag） | `cai_agent/gateway_*` | RFC 评审后再实现 |
-| 3 | `HM-N12-D01` | Design | Modal/Daytona 云后端 POC（仅过 **`CLOUD_RUNTIME_OOS`** 门槛后） | `docs/CLOUD_RUNTIME_OOS*`、`runtime/` | 文档门槛复核 + stub 契约 |
+| 1 | `GW-N02-D02` | Design | 联邦执行链路（`route-preview` → 可选实跑，feature flag） | `cai_agent/gateway_*` | RFC 评审后再实现 |
+| 2 | `HM-N12-D01` | Design | Modal/Daytona 云后端 POC（仅过 **`CLOUD_RUNTIME_OOS`** 门槛后） | `docs/CLOUD_RUNTIME_OOS*`、`runtime/` | 文档门槛复核 + stub 契约 |
 
 ## 执行顺序
 
-1. **平台外表面 Sprint**：总表 [`PLATFORM_SURFACES_SPRINT_PLAN.zh-CN.md`](PLATFORM_SURFACES_SPRINT_PLAN.zh-CN.md)；**`OPS-N01-D01`/`OPS-N02-D01`**（探活 + **action-audit** 查询）与 **`HM-N08-M01`** 已合入；实现队列从 **`GW-N02-D01`** 设计项开始。
+1. **平台外表面 Sprint**：总表 [`PLATFORM_SURFACES_SPRINT_PLAN.zh-CN.md`](PLATFORM_SURFACES_SPRINT_PLAN.zh-CN.md)；**`OPS-N01-D01`/`OPS-N02-D01`**、**`GW-N02-D01`**（slash 部署自检）与 **`HM-N08-M01`** 已合入；实现队列下一项为 **`GW-N02-D02`**（联邦执行，须 RFC）。
 2. **解限与安全**：全景清单 [`SAFETY_UNRESTRICTED_BACKLOG.zh-CN.md`](SAFETY_UNRESTRICTED_BACKLOG.zh-CN.md)；**P0–P4**、**`SAFETY-N08-D01`** 与 **`SAFETY-N07-D01/D02`** 已收口；更深项须另立项。
 3. 若并行上下文面：优先 **`CTX-COMPACT-N09`** / **`CTX-COMPACT-N10`**。
-4. Gateway 与联邦：在 **`GW-N02-D01`** 设计冻结后再开 **`GW-N02-D02`** 实现单。
+4. Gateway 与联邦：**`GW-N02-D01`** 已交付；**`GW-N02-D02`** 须在 RFC 冻结后再扩实现面。
 
 ## 每个任务的统一要求
 

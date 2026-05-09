@@ -133,6 +133,8 @@ def test_api_openapi_contract_lists_api_and_ops_routes() -> None:
     assert paths["/v1/gateway/channel-monitor"]["get"].get("x-cai-schema-version") == "gateway_channel_monitor_v1"
     assert "/v1/gateway/slash-catalog" in paths
     assert paths["/v1/gateway/slash-catalog"]["get"].get("x-cai-schema-version") == "gateway_slash_catalog_v1"
+    assert "/v1/gateway/slash-deploy-check" in paths
+    assert paths["/v1/gateway/slash-deploy-check"]["get"].get("x-cai-schema-version") == "gateway_slash_deploy_check_v1"
     assert paths["/healthz"]["get"].get("security") == []
     assert paths["/v1/status"]["get"].get("security") == [{"bearerAuth": []}]
     versions = (data.get("x-cai-contract") or {}).get("schema_versions") or []
@@ -626,6 +628,23 @@ def test_api_gateway_slash_catalog() -> None:
         httpd.server_close()
 
 
+def test_api_gateway_slash_deploy_check() -> None:
+    root = (Path.cwd() / ".tmp-test" / "api-gateway-slash-deploy-check").resolve()
+    root.mkdir(parents=True, exist_ok=True)
+    httpd = _start(root, None)
+    try:
+        with urllib.request.urlopen(_url(httpd, "/v1/gateway/slash-deploy-check"), timeout=5) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        assert data.get("schema_version") == "gateway_slash_deploy_check_v1"
+        sm = data.get("summary") or {}
+        assert sm.get("platforms_count") == 3
+        ids = {p.get("id") for p in (data.get("platforms") or []) if isinstance(p, dict)}
+        assert ids == {"slack", "discord", "teams"}
+    finally:
+        httpd.shutdown()
+        httpd.server_close()
+
+
 def test_api_new_routes_require_bearer(tmp_path: Path) -> None:
     root = tmp_path.resolve()
     httpd = _start(root, "abc")
@@ -639,6 +658,7 @@ def test_api_new_routes_require_bearer(tmp_path: Path) -> None:
             "/v1/gateway/federation-summary",
             "/v1/gateway/channel-monitor",
             "/v1/gateway/slash-catalog",
+            "/v1/gateway/slash-deploy-check",
         ):
             with pytest.raises(urllib.error.HTTPError) as ei:
                 urllib.request.urlopen(_url(httpd, path), timeout=5)

@@ -284,6 +284,327 @@ def _platform_readiness(
     }
 
 
+def _slash_deploy_check_row(
+    check_id: str,
+    platform: str,
+    *,
+    ok: bool | None,
+    severity: str,
+    message: str,
+    next_step: str | None = None,
+    doc_ref: str | None = None,
+) -> dict[str, Any]:
+    row: dict[str, Any] = {
+        "id": check_id,
+        "platform": platform,
+        "ok": ok,
+        "severity": severity,
+        "message": message,
+    }
+    if next_step:
+        row["next_step"] = next_step
+    if doc_ref:
+        row["doc_ref"] = doc_ref
+    return row
+
+
+def _slash_deploy_platform_state(checks: list[dict[str, Any]]) -> str:
+    if any(c.get("ok") is False and c.get("severity") == "blocker" for c in checks):
+        return "blocked"
+    if any(c.get("ok") is False for c in checks):
+        return "warn"
+    if any(c.get("ok") is None for c in checks):
+        return "warn"
+    return "ready"
+
+
+def _token_check_ok(health_doc: dict[str, Any], *, token_env_set: bool) -> bool:
+    tc = health_doc.get("token_check") if isinstance(health_doc.get("token_check"), dict) else {}
+    if not token_env_set:
+        return False
+    if tc.get("performed") and tc.get("ok") is False:
+        return False
+    return tc.get("ok") is True
+
+
+def build_gateway_slash_deploy_check_payload(workspace: str | Path | None = None) -> dict[str, Any]:
+    """Offline slash / command surface deploy checklist (Slack, Discord, Teams).
+
+    Combines env + local map signals with optional vendor probes (same helpers as
+    ``gateway * health``). Vendor-console steps use ``ok: null``.
+    """
+    base = Path(workspace or ".").expanduser().resolve()
+    bot_slack = str(os.environ.get("CAI_SLACK_BOT_TOKEN") or "").strip()
+    secret_slack = str(os.environ.get("CAI_SLACK_SIGNING_SECRET") or "").strip()
+    slack_h = slack_gateway_health(
+        base,
+        bot_token=bot_slack or None,
+        signing_secret=secret_slack or None,
+    )
+    bot_disc = str(
+        os.environ.get("CAI_GATEWAY_DISCORD_BOT_TOKEN") or os.environ.get("CAI_DISCORD_BOT_TOKEN") or "",
+    ).strip()
+    discord_h = discord_gateway_health(base, bot_token=bot_disc or None)
+    teams_app_id_e = str(os.environ.get("CAI_TEAMS_APP_ID") or "").strip()
+    teams_app_pw_e = str(os.environ.get("CAI_TEAMS_APP_PASSWORD") or "").strip()
+    teams_tenant_e = str(os.environ.get("CAI_TEAMS_TENANT_ID") or "").strip()
+    teams_wh_e = str(os.environ.get("CAI_TEAMS_WEBHOOK_SECRET") or "").strip()
+    teams_h = teams_gateway_health(
+        base,
+        app_id=os.environ.get("CAI_TEAMS_APP_ID"),
+        app_password=os.environ.get("CAI_TEAMS_APP_PASSWORD"),
+        tenant_id=os.environ.get("CAI_TEAMS_TENANT_ID"),
+        webhook_secret=os.environ.get("CAI_TEAMS_WEBHOOK_SECRET"),
+    )
+
+    platforms_out: list[dict[str, Any]] = []
+
+    slack_scope = (
+        int(slack_h.get("bindings_count") or 0) > 0
+        or bool(slack_h.get("allowlist_enabled"))
+        or bool(bot_slack)
+        or bool(secret_slack)
+    )
+    slack_checks: list[dict[str, Any]] = []
+    if not slack_scope:
+        slack_checks.append(
+            _slash_deploy_check_row(
+                "slack_not_in_scope",
+                "slack",
+                ok=True,
+                severity="info",
+                message="Slack gateway is not configured for this workspace; slash deploy checks skipped.",
+                doc_ref="docs/GATEWAY_SLACK_SLASH_BLOCKKIT.zh-CN.md",
+            ),
+        )
+    else:
+        token_ok = _token_check_ok(slack_h, token_env_set=bool(bot_slack))
+        slack_checks.append(
+            _slash_deploy_check_row(
+                "slack_bot_token",
+                "slack",
+                ok=token_ok,
+                severity="blocker",
+                message="Slack bot token is set and auth.test succeeds."
+                if token_ok
+                else "Set CAI_SLACK_BOT_TOKEN and verify with `cai-agent gateway slack health --json`.",
+                next_step="cai-agent gateway slack health --json",
+            ),
+        )
+        has_secret = bool(slack_h.get("signing_secret_configured"))
+        slack_checks.append(
+            _slash_deploy_check_row(
+                "slack_signing_secret",
+                "slack",
+                ok=has_secret,
+                severity="blocker",
+                message="Slack signing secret is configured for request verification."
+                if has_secret
+                else "Set CAI_SLACK_SIGNING_SECRET for Events API and slash verification.",
+                next_step="export CAI_SLACK_SIGNING_SECRET=...",
+            ),
+        )
+        slack_checks.append(
+            _slash_deploy_check_row(
+                "slack_app_request_urls",
+                "slack",
+                ok=None,
+                severity="info",
+                message="In the Slack app, set Slash Command and Event Subscriptions request URLs to HTTPS that terminates at `cai-agent gateway slack serve-webhook`.",
+                next_step="Slack API → Your App → Slash Commands + Event Subscriptions",
+                doc_ref="docs/GATEWAY_SLACK_SLASH_BLOCKKIT.zh-CN.md",
+            ),
+        )
+        slack_checks.append(
+            _slash_deploy_check_row(
+                "slack_execute_on_slash",
+                "slack",
+                ok=None,
+                severity="info",
+                message="To run goals from /cai, start serve-webhook with --execute-on-slash and restrict channels via allowlist or bindings.",
+                next_step="cai-agent gateway slack serve-webhook --help",
+                doc_ref="docs/GATEWAY_SLACK_SLASH_BLOCKKIT.zh-CN.md",
+            ),
+        )
+    platforms_out.append(
+        {
+            "id": "slack",
+            "configured": bool(slack_scope),
+            "state": _slash_deploy_platform_state(slack_checks),
+            "checks": slack_checks,
+        },
+    )
+
+    discord_scope = (
+        int(discord_h.get("bindings_count") or 0) > 0
+        or bool(discord_h.get("allowlist_enabled"))
+        or bool(bot_disc)
+    )
+    discord_checks: list[dict[str, Any]] = []
+    if not discord_scope:
+        discord_checks.append(
+            _slash_deploy_check_row(
+                "discord_not_in_scope",
+                "discord",
+                ok=True,
+                severity="info",
+                message="Discord gateway is not configured for this workspace; slash deploy checks skipped.",
+                doc_ref="docs/GATEWAY_DISCORD_TELEGRAM_PARITY.zh-CN.md",
+            ),
+        )
+    else:
+        d_tok_ok = _token_check_ok(discord_h, token_env_set=bool(bot_disc))
+        discord_checks.append(
+            _slash_deploy_check_row(
+                "discord_bot_token",
+                "discord",
+                ok=d_tok_ok,
+                severity="blocker",
+                message="Discord bot token is set and GET /users/@me succeeds."
+                if d_tok_ok
+                else "Set CAI_GATEWAY_DISCORD_BOT_TOKEN (or CAI_DISCORD_BOT_TOKEN) and verify with `cai-agent gateway discord health --json`.",
+                next_step="cai-agent gateway discord health --json",
+            ),
+        )
+        discord_checks.append(
+            _slash_deploy_check_row(
+                "discord_application_commands",
+                "discord",
+                ok=None,
+                severity="info",
+                message="Register application (slash) commands so /cai appears in guilds: `cai-agent gateway discord commands register` or the Developer Portal.",
+                next_step="cai-agent gateway discord commands register --help",
+                doc_ref="docs/GATEWAY_DISCORD_TELEGRAM_PARITY.zh-CN.md",
+            ),
+        )
+        discord_checks.append(
+            _slash_deploy_check_row(
+                "discord_interactions_endpoint",
+                "discord",
+                ok=None,
+                severity="info",
+                message="Point the Discord application's Interactions Endpoint URL to the public HTTPS URL that reaches your gateway.",
+                next_step="Discord Developer Portal → Application → Interactions Endpoint URL",
+                doc_ref="docs/GATEWAY_DISCORD_TELEGRAM_PARITY.zh-CN.md",
+            ),
+        )
+    platforms_out.append(
+        {
+            "id": "discord",
+            "configured": bool(discord_scope),
+            "state": _slash_deploy_platform_state(discord_checks),
+            "checks": discord_checks,
+        },
+    )
+
+    teams_scope = (
+        int(teams_h.get("bindings_count") or 0) > 0
+        or bool(teams_h.get("allowlist_enabled"))
+        or bool(teams_app_id_e)
+        or bool(teams_app_pw_e)
+        or bool(teams_tenant_e)
+        or bool(teams_wh_e)
+    )
+    teams_checks: list[dict[str, Any]] = []
+    if not teams_scope:
+        teams_checks.append(
+            _slash_deploy_check_row(
+                "teams_not_in_scope",
+                "teams",
+                ok=True,
+                severity="info",
+                message="Teams gateway is not configured for this workspace; command-list deploy checks skipped.",
+            ),
+        )
+    else:
+        has_app = bool(teams_h.get("app_id_configured"))
+        teams_checks.append(
+            _slash_deploy_check_row(
+                "teams_app_id",
+                "teams",
+                ok=has_app,
+                severity="blocker",
+                message="CAI_TEAMS_APP_ID is set for Bot Framework registration."
+                if has_app
+                else "Set CAI_TEAMS_APP_ID to match the Azure Bot resource.",
+                next_step="export CAI_TEAMS_APP_ID=...",
+            ),
+        )
+        has_pw = bool(teams_h.get("app_password_configured"))
+        teams_checks.append(
+            _slash_deploy_check_row(
+                "teams_app_password",
+                "teams",
+                ok=has_pw,
+                severity="blocker",
+                message="CAI_TEAMS_APP_PASSWORD is set for token validation at the messaging endpoint."
+                if has_pw
+                else "Set CAI_TEAMS_APP_PASSWORD for the Azure Bot client secret.",
+            ),
+        )
+        has_wh = bool(teams_h.get("webhook_secret_configured"))
+        teams_checks.append(
+            _slash_deploy_check_row(
+                "teams_webhook_secret",
+                "teams",
+                ok=has_wh,
+                severity="warning",
+                message="CAI_TEAMS_WEBHOOK_SECRET is set for the lightweight local webhook receiver."
+                if has_wh
+                else "Set CAI_TEAMS_WEBHOOK_SECRET so incoming activities can be verified.",
+            ),
+        )
+        teams_checks.append(
+            _slash_deploy_check_row(
+                "teams_messaging_endpoint",
+                "teams",
+                ok=None,
+                severity="info",
+                message="In Azure Bot configuration, set the messaging endpoint to the public HTTPS URL that reaches `cai-agent gateway teams serve-webhook`.",
+                next_step="Azure Portal → Bot → Configuration → Messaging endpoint",
+            ),
+        )
+        teams_checks.append(
+            _slash_deploy_check_row(
+                "teams_manifest_command_list",
+                "teams",
+                ok=None,
+                severity="info",
+                message="Ship a manifest with command lists (`cai-agent gateway teams manifest --json`) and sideload or publish the Teams app.",
+                next_step="cai-agent gateway teams manifest --json",
+            ),
+        )
+    platforms_out.append(
+        {
+            "id": "teams",
+            "configured": bool(teams_scope),
+            "state": _slash_deploy_platform_state(teams_checks),
+            "checks": teams_checks,
+        },
+    )
+
+    states = [str(p.get("state") or "") for p in platforms_out]
+    manual_n = sum(
+        1
+        for p in platforms_out
+        for c in (p.get("checks") if isinstance(p.get("checks"), list) else [])
+        if isinstance(c, dict) and c.get("ok") is None
+    )
+    return {
+        "schema_version": "gateway_slash_deploy_check_v1",
+        "generated_at": datetime.now(UTC).isoformat(),
+        "workspace": str(base),
+        "platforms": platforms_out,
+        "summary": {
+            "platforms_count": len(platforms_out),
+            "blocked": sum(1 for s in states if s == "blocked"),
+            "warn": sum(1 for s in states if s == "warn"),
+            "ready": sum(1 for s in states if s == "ready"),
+            "manual_check_count": manual_n,
+        },
+    }
+
+
 def build_gateway_production_summary_payload(workspace: str | Path | None = None) -> dict[str, Any]:
     """Return ``gateway_production_summary_v1`` without contacting vendor APIs."""
     base = Path(workspace or ".").expanduser().resolve()
@@ -438,6 +759,7 @@ def build_gateway_production_summary_payload(workspace: str | Path | None = None
                 len(r.get("diagnostics") if isinstance(r.get("diagnostics"), list) else []) for r in rows
             ),
         },
+        "slash_deploy_check": build_gateway_slash_deploy_check_payload(workspace=base),
     }
 
 

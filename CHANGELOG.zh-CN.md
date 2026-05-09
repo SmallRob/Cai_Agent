@@ -6,6 +6,8 @@
 
 ### Unreleased
 
+- **GW-N02-D01 Gateway Slash 部署自检**：CLI **`cai-agent gateway slash-deploy-check --json`** 与 **`GET /v1/gateway/slash-deploy-check`** 返回 **`gateway_slash_deploy_check_v1`**（Slack / Discord / Teams；含可选 API 探测与 **`ok: null`** 的厂商控制台步骤）。**`gateway prod-status --json`** 内嵌同结构字段 **`slash_deploy_check`**。实现 **`build_gateway_slash_deploy_check_payload`**（`gateway_production.py`）；OpenAPI；schema README；smoke + 测试。
+
 - **OPS-N02-D01 Operator 审计查询**：**`ops serve`** 新增 **`GET /v1/ops/action-audit`**（**`ops_action_audit_query_v1`**）：可选 **`workspace`** 或省略以在 allowlist 内合并；过滤 **`action`** / **`mode`** / **`ok`** / **`actor_prefix`** / **`limit`**。**`ops_workspaces_v1`** 增加 **`action_audit_url`**。实现 **`build_ops_action_audit_query_payload`**（`ops_dashboard.py`）；OpenAPI；OPS_DYNAMIC / schema README / README。回归：全量 pytest + smoke。
 
 - **平台外表面 Sprint 文档**：新增 [`docs/PLATFORM_SURFACES_SPRINT_PLAN.zh-CN.md`](docs/PLATFORM_SURFACES_SPRINT_PLAN.zh-CN.md)；[`ROADMAP_EXECUTION.zh-CN.md`](docs/ROADMAP_EXECUTION.zh-CN.md) §10 登记 **`OPS-N01-D01`**（Done）、**`OPS-N02-D01`**、**`GW-N02-D01/D02`**、**`HM-N12-D01`**、**`HM-N08-M01`**（Done）；[`DEVELOPER_TODOS.zh-CN.md`](docs/DEVELOPER_TODOS.zh-CN.md) / [`NEXT_ACTIONS.zh-CN.md`](docs/NEXT_ACTIONS.zh-CN.md) / [`canvas/GAP_TRACKER.md`](docs/canvas/GAP_TRACKER.md) 已镜像队列。

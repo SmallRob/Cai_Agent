@@ -7016,6 +7016,13 @@ def main(argv: list[str] | None = None) -> int:
     gw_slash_catalog.add_argument("-w", "--workspace", default=None, dest="gateway_workspace")
     gw_slash_catalog.add_argument("--json", action="store_true", dest="json_output")
 
+    gw_slash_deploy = gateway_sub.add_parser(
+        "slash-deploy-check",
+        help="Gateway slash / command surface deploy checklist (Slack, Discord, Teams)",
+    )
+    gw_slash_deploy.add_argument("-w", "--workspace", default=None, dest="gateway_workspace")
+    gw_slash_deploy.add_argument("--json", action="store_true", dest="json_output")
+
     gw_stop = gateway_sub.add_parser("stop", help="停止 start 写入 PID 的 webhook 子进程")
     gw_stop.add_argument(
         "-w",
@@ -13222,7 +13229,18 @@ def main(argv: list[str] | None = None) -> int:
             root = Path.cwd().resolve()
 
         ga = getattr(args, "gateway_action", None)
-        if ga in {"setup", "start", "status", "prod-status", "federation-summary", "channel-monitor", "slash-catalog", "stop", "route-preview"}:
+        if ga in {
+            "setup",
+            "start",
+            "status",
+            "prod-status",
+            "federation-summary",
+            "channel-monitor",
+            "slash-catalog",
+            "slash-deploy-check",
+            "stop",
+            "route-preview",
+        }:
             from cai_agent import gateway_lifecycle
 
             if ga == "setup":
@@ -13362,6 +13380,20 @@ def main(argv: list[str] | None = None) -> int:
                     print(
                         "[gateway slash-catalog] "
                         f"platforms={out_st.get('platforms_count')} commands={out_st.get('commands_count')}",
+                    )
+                return 0
+            if ga == "slash-deploy-check":
+                from cai_agent.gateway_production import build_gateway_slash_deploy_check_payload
+
+                out_st = build_gateway_slash_deploy_check_payload(root)
+                if bool(getattr(args, "json_output", False)):
+                    print(json.dumps(out_st, ensure_ascii=False))
+                else:
+                    sm = out_st.get("summary") if isinstance(out_st.get("summary"), dict) else {}
+                    print(
+                        "[gateway slash-deploy-check] "
+                        f"blocked={sm.get('blocked')} warn={sm.get('warn')} ready={sm.get('ready')} "
+                        f"manual={sm.get('manual_check_count')}",
                     )
                 return 0
             if ga == "stop":

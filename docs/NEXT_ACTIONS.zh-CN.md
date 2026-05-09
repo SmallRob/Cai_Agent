@@ -14,13 +14,13 @@
 
 | 顺位 | 任务 | 状态 | 验收 |
 |---|---|---|---|
-| 1 | `GW-N02-D01` | Design | Slash 真实平台注册/部署检查清单 |
+| 1 | `GW-N02-D02` | Design | 联邦 route-preview 可选实跑（须 RFC） |
 
 ## 后续队列
 
 - `CTX-COMPACT-N09`：安全/隐私过滤
 - `CTX-COMPACT-N10`：真实模型回归样本集
-- `GW-N02-D01` / `GW-N02-D02`：Slash 真实部署检查、联邦执行链路（设计冻结后实现）
+- `GW-N02-D02`：联邦执行链路（RFC 评审后再实现）
 - `HM-N12-D01`：云后端 Modal/Daytona（**[`CLOUD_RUNTIME_OOS.zh-CN.md`](CLOUD_RUNTIME_OOS.zh-CN.md)** 门槛）
 
 ## 条件与边界
@@ -35,6 +35,7 @@
 
 | 任务 | 日期 | 摘要 | 验证 |
 |---|---|---|---|
+| `GW-N02-D01` | 2026-05-10 | gateway_slash_deploy_check_v1: CLI gateway slash-deploy-check, GET /v1/gateway/slash-deploy-check, prod-status slash_deploy_check; build_gateway_slash_deploy_check_payload in gateway_production.py. | python -m pytest -q cai-agent/tests: PASS (1007 passed, 20 subtests)<br>python scripts/smoke_new_features.py: NEW_FEATURE_CHECKS_OK |
 | `OPS-N02-D01` | 2026-05-10 | GET /v1/ops/action-audit (ops_action_audit_query_v1), workspaces action_audit_url, actor_prefix filter, OpenAPI | python -m pytest -q cai-agent/tests: PASS (1005 passed, 20 subtests)<br>python scripts/smoke_new_features.py: NEW_FEATURE_CHECKS_OK |
 | `DOC-QA-20260501` | 2026-05-01 | README 中英补充：解限 TUI 即时生效、`merge_tool_call_args` 顶层参数、Windows `E:`；IMPLEMENTATION_STATUS 回写 graph/doctor/测例；`doctor` 输出箭头改为 ASCII 避免 GBK 控制台崩溃；CHANGELOG。 | python -m pytest -q cai-agent/tests: PASS (997 passed, 20 subtests)<br>python scripts/smoke_new_features.py: NEW_FEATURE_CHECKS_OK<br>`QA_SKIP_LOG=1 python scripts/run_regression.py`: PASS |
 | `SAFETY-N08-D01` | 2026-05-01 | Unrestricted mode: `resolve_tool_path` allows absolute paths outside workspace for file tools + `run_command cwd`; outside-workspace uses dangerous confirmation when enabled; `test_unrestricted_filesystem_paths.py`. | python -m pytest -q cai-agent/tests: PASS (988 passed, 20 subtests)<br>python scripts/smoke_new_features.py: NEW_FEATURE_CHECKS_OK |
