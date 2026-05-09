@@ -15,7 +15,7 @@
 ## 建议迭代顺序（2～3 周为一轮）
 
 1. **A1**：侧车 `GET /v1/ops/healthz`（无 Bearer，便于探活）+ README/Web 文档同步（本轮已启动）。
-2. **A2**：`OPS-N02-D01`  operator 路由与跨 workspace 写路径契约（OpenAPI 片段 + pytest）。
+2. **A2**：~~`OPS-N02-D01`~~ **Done**：**`GET /v1/ops/action-audit`**（**`ops_action_audit_query_v1`**）+ OpenAPI + pytest；下一小步：更细粒度 **operator 路由**（与 **`GW-N02-D02`** 联邦执行衔接时再开单）。
 3. **B1**：`GW-N02-D01`  选定平台（建议 Slack 或 Discord）Slash **部署检查清单** + `gateway prod-status` / doctor 扩展字段。
 4. **B2**：`GW-N02-D02`  `route-preview` 与真实执行链路的 **feature flag** 对齐（设计评审后实现）。
 5. **C1**：`HM-N12-D01`  复核 `CLOUD_RUNTIME_OOS` 门槛；通过后再做 Modal/Daytona **stub + 配置键草案**。

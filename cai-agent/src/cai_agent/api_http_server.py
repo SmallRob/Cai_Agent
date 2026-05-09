@@ -212,6 +212,20 @@ def build_api_openapi_v1() -> dict[str, Any]:
         {"name": "schedule_days", "in": "query", "schema": {"type": "integer", "minimum": 1}},
         {"name": "cost_session_limit", "in": "query", "schema": {"type": "integer", "minimum": 1}},
     ]
+    ops_action_audit_params = [
+        {
+            "name": "workspace",
+            "in": "query",
+            "required": False,
+            "schema": {"type": "string"},
+            "description": "If set, list audits for this allowlisted root only; if omitted, merge recent rows across all allowlisted workspaces.",
+        },
+        {"name": "limit", "in": "query", "schema": {"type": "integer", "minimum": 1, "maximum": 500}},
+        {"name": "action", "in": "query", "schema": {"type": "string"}},
+        {"name": "mode", "in": "query", "schema": {"type": "string"}},
+        {"name": "ok", "in": "query", "schema": {"type": "string"}, "description": "Optional true/false filter on audit ok flag."},
+        {"name": "actor_prefix", "in": "query", "schema": {"type": "string"}},
+    ]
     ops_rbac_headers = [
         {
             "name": "X-CAI-Actor",
@@ -282,6 +296,14 @@ def build_api_openapi_v1() -> dict[str, Any]:
                 summary="Ops sidecar liveness (no bearer; matches ops serve)",
                 schema_version="ops_liveness_v1",
                 security=False,
+            ),
+        },
+        "/v1/ops/action-audit": {
+            "get": _op(
+                method="getOpsActionAudit",
+                summary="Query ops dashboard action audit JSONL (single workspace or merged allowlist)",
+                schema_version="ops_action_audit_query_v1",
+                parameters=ops_action_audit_params,
             ),
         },
         "/v1/ops/dashboard": {"get": _op(method="getOpsDashboard", summary="Ops dashboard JSON", schema_version="ops_dashboard_v1", parameters=ops_params)},

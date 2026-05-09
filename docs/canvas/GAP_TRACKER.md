@@ -42,7 +42,7 @@ Status vocabulary:
 | `ECC-01` | `Done` | **`ECC-01a`/`ECC-01b` Done**（`ecc` CLI + 安装/导出/共享文档） | `ROADMAP_EXECUTION` §10 |
 | `ECC-02` | `Done` | **`ECC-02a`/`ECC-02b` Done**（routing-test / cost report + compact explain） | `ROADMAP_EXECUTION` §10 |
 | `ECC-03` | `Done` | **`ECC-03a`/`ECC-03b`/`ECC-03c` Done**（治理 RFC + compat check + CI snapshot） | `ROADMAP_EXECUTION` §10 |
-| `HM-04-ops-deep` | `Ready` | **`OPS-N02-D01`** — operator 控制面（跨 workspace / 租户边界 / 审计） | `ROADMAP_EXECUTION` §10、`PLATFORM_SURFACES_SPRINT_PLAN.zh-CN.md` |
+| `HM-04-ops-deep` | `Done` | **`OPS-N02-D01`** — **`/v1/ops/action-audit`** 与 workspaces **`action_audit_url`**；后续深化见 **`GW-N02-*`** | `ROADMAP_EXECUTION` §10 |
 | `HM-03-gateway-slash-fed` | `Design` | **`GW-N02-D01`/`GW-N02-D02`** — Slash 部署检查、联邦执行链路 | 同上 |
 | `HM-06-cloud` | `Design` | **`HM-N12-D01`** — Modal/Daytona 等云后端（`CLOUD_RUNTIME_OOS` 门槛） | 同上 |
 

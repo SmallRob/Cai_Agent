@@ -15,6 +15,7 @@ Chinese mirror (same normative content, Chinese prose): [`OPS_DYNAMIC_WEB_API.zh
 | RBAC write paths (OPS-RBAC-N01) | `ops serve --role viewer\|operator\|admin` | `viewer` is read/preview/audit only; `operator` may apply schedule reorder and gateway binding edits; `admin` may also apply profile switches; denied writes are audited |
 | Multi-workspace discovery (OPS-MW-N01) | `GET /v1/ops/workspaces` | Lists only the server `--allow-workspace` allowlist; `include_summary=1` aggregates each workspace dashboard summary |
 | Liveness | `GET /v1/ops/healthz` | **`ops_liveness_v1`** JSON; **no bearer auth** (for load balancers) |
+| Action audit query | `GET /v1/ops/action-audit` | **`ops_action_audit_query_v1`**; optional `workspace` or merged allowlist; filters `action`/`mode`/`ok`/`actor_prefix`/`limit` |
 
 CLI flags for `ops dashboard` (see **`cai_agent/__main__.py`**): **`--pattern`**, **`--limit`**, **`--schedule-days`**, **`--audit-file`**, **`--html-refresh-seconds`**.
 
@@ -35,6 +36,14 @@ Base path is fixed as below (integrators may reverse-proxy under **`/api`**, etc
 Load-balancer probe. **Does not** require **`CAI_OPS_API_TOKEN`**.
 
 **200** JSON: **`ops_liveness_v1`**, e.g. `{"ok": true, "service": "cai-agent-ops", "schema_version": "ops_liveness_v1"}`.
+
+### 3.0b `GET /v1/ops/action-audit`
+
+Read-only query over **`ops_dashboard_action_audit_v1`** rows stored in **`.cai/ops-dashboard-actions.jsonl`**.
+
+**Query**: optional **`workspace`** (if omitted, **`variant=aggregate`** merges recent rows across all **`--allow-workspace`** roots, sorted by **`generated_at`** desc); **`limit`** (default **50**, max **500**); optional filters **`action`**, **`mode`**, **`ok`** (`true`/`false`), **`actor_prefix`**.
+
+**200**: **`ops_action_audit_query_v1`** (`variant` is **`single_workspace`** or **`aggregate`**). Same bearer rules as other ops routes when **`CAI_OPS_API_TOKEN`** is set.
 
 ### 3.1 `GET /v1/ops/dashboard`
 

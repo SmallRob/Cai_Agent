@@ -8,13 +8,13 @@
 ## 当前目标
 
 - **解限安全**：[`SAFETY_UNRESTRICTED_BACKLOG.zh-CN.md`](SAFETY_UNRESTRICTED_BACKLOG.zh-CN.md) 清单 **P4 已全部 Done**；**`SAFETY-N08-D01`** 解限下 **绝对路径可跨 `[agent].workspace`**（工作区外路径默认仍须二次确认）；**`SAFETY-N07-D01/D02`** 关键写 noop（可关）；清单 **Explore 已清零**，更深项需另立项评审。
-- **平台外表面 Sprint**：[`PLATFORM_SURFACES_SPRINT_PLAN.zh-CN.md`](PLATFORM_SURFACES_SPRINT_PLAN.zh-CN.md)（Ops / Gateway / 云 Runtime / Voice）；**`OPS-N01-D01`**（**`/v1/ops/healthz`**）与 **`HM-N08-M01`**（[`VOICE_MCP_RUNBOOK.zh-CN.md`](VOICE_MCP_RUNBOOK.zh-CN.md)）已落地；README 已补 **ops Web UI** 用法。
+- **平台外表面 Sprint**：[`PLATFORM_SURFACES_SPRINT_PLAN.zh-CN.md`](PLATFORM_SURFACES_SPRINT_PLAN.zh-CN.md)（Ops / Gateway / 云 Runtime / Voice）；**`OPS-N01-D01`** / **`OPS-N02-D01`**（**`/v1/ops/healthz`**、**`/v1/ops/action-audit`**）与 **`HM-N08-M01`**（[`VOICE_MCP_RUNBOOK.zh-CN.md`](VOICE_MCP_RUNBOOK.zh-CN.md)）已落地；README 已补 **ops Web UI** 用法。
 
 ## 现在做
 
 | 顺位 | 任务 | 状态 | 验收 |
 |---|---|---|---|
-| 1 | `OPS-N02-D01` | Ready | Operator 控制面契约 + OpenAPI 片段 + pytest |
+| 1 | `GW-N02-D01` | Design | Slash 真实平台注册/部署检查清单 |
 
 ## 后续队列
 
@@ -35,6 +35,7 @@
 
 | 任务 | 日期 | 摘要 | 验证 |
 |---|---|---|---|
+| `OPS-N02-D01` | 2026-05-10 | GET /v1/ops/action-audit (ops_action_audit_query_v1), workspaces action_audit_url, actor_prefix filter, OpenAPI | python -m pytest -q cai-agent/tests: PASS (1005 passed, 20 subtests)<br>python scripts/smoke_new_features.py: NEW_FEATURE_CHECKS_OK |
 | `DOC-QA-20260501` | 2026-05-01 | README 中英补充：解限 TUI 即时生效、`merge_tool_call_args` 顶层参数、Windows `E:`；IMPLEMENTATION_STATUS 回写 graph/doctor/测例；`doctor` 输出箭头改为 ASCII 避免 GBK 控制台崩溃；CHANGELOG。 | python -m pytest -q cai-agent/tests: PASS (997 passed, 20 subtests)<br>python scripts/smoke_new_features.py: NEW_FEATURE_CHECKS_OK<br>`QA_SKIP_LOG=1 python scripts/run_regression.py`: PASS |
 | `SAFETY-N08-D01` | 2026-05-01 | Unrestricted mode: `resolve_tool_path` allows absolute paths outside workspace for file tools + `run_command cwd`; outside-workspace uses dangerous confirmation when enabled; `test_unrestricted_filesystem_paths.py`. | python -m pytest -q cai-agent/tests: PASS (988 passed, 20 subtests)<br>python scripts/smoke_new_features.py: NEW_FEATURE_CHECKS_OK |
 | `SAFETY-N07-D02` | 2026-05-01 | Critical write_file TOML/JSON semantic noop; SAFETY backlog Explore cleared; docs and tests updated. | python -m pytest -q cai-agent/tests: PASS (980 passed, 20 subtests)<br>python scripts/smoke_new_features.py: NEW_FEATURE_CHECKS_OK |

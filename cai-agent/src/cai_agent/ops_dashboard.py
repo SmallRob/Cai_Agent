@@ -77,6 +77,7 @@ def _read_ops_action_audit(
     action: str | None = None,
     mode: str | None = None,
     ok: bool | None = None,
+    actor_prefix: str | None = None,
 ) -> list[dict[str, Any]]:
     ap = _ops_action_audit_path(workspace)
     if not ap.is_file():
@@ -94,6 +95,7 @@ def _read_ops_action_audit(
             rows.append(obj)
     a = str(action or "").strip()
     m = str(mode or "").strip().lower()
+    apfx = str(actor_prefix or "").strip()
     filt: list[dict[str, Any]] = []
     for r in rows:
         if a and str(r.get("action") or "") != a:
@@ -102,8 +104,90 @@ def _read_ops_action_audit(
             continue
         if ok is not None and bool(r.get("ok")) != bool(ok):
             continue
+        if apfx and not str(r.get("actor") or "").startswith(apfx):
+            continue
         filt.append(r)
     return filt[-max(1, int(limit)) :]
+
+
+def build_ops_action_audit_query_payload(
+    *,
+    allow_roots: frozenset[Path],
+    workspace: Path | None,
+    limit: int = 50,
+    action: str | None = None,
+    mode: str | None = None,
+    ok: bool | None = None,
+    actor_prefix: str | None = None,
+) -> dict[str, Any]:
+    """HTTP ``GET /v1/ops/action-audit``：单工作区或 allowlist 聚合查询 ``ops_dashboard_action_audit_v1`` 行。"""
+
+    def _opt_str(v: str | None) -> str | None:
+        if v is None:
+            return None
+        t = str(v).strip()
+        return t or None
+
+    lim = max(1, min(int(limit), 500))
+    act = _opt_str(action)
+    mod_raw = _opt_str(mode)
+    mod = mod_raw.lower() if mod_raw else None
+    apfx = _opt_str(actor_prefix)
+    filters: dict[str, Any] = {
+        "action": act,
+        "mode": mod,
+        "ok": ok,
+        "actor_prefix": apfx,
+    }
+    now = datetime.now(UTC).isoformat()
+    if workspace is not None:
+        rows = _read_ops_action_audit(
+            workspace,
+            limit=lim,
+            action=act,
+            mode=mod,
+            ok=ok,
+            actor_prefix=apfx,
+        )
+        return {
+            "schema_version": "ops_action_audit_query_v1",
+            "variant": "single_workspace",
+            "workspace": str(workspace),
+            "workspaces_scanned": 1,
+            "generated_at": now,
+            "limit": lim,
+            "filters": filters,
+            "items": rows,
+            "items_count": len(rows),
+        }
+    all_rows: list[dict[str, Any]] = []
+    scanned = 0
+    for root in sorted(allow_roots):
+        if not root.is_dir():
+            continue
+        scanned += 1
+        part = _read_ops_action_audit(
+            root,
+            limit=lim,
+            action=act,
+            mode=mod,
+            ok=ok,
+            actor_prefix=apfx,
+        )
+        all_rows.extend(part)
+    all_rows.sort(key=lambda r: str(r.get("generated_at") or ""), reverse=True)
+    trimmed = all_rows[:lim]
+    return {
+        "schema_version": "ops_action_audit_query_v1",
+        "variant": "aggregate",
+        "workspace": None,
+        "workspaces_scanned": scanned,
+        "generated_at": now,
+        "limit": lim,
+        "filters": filters,
+        "items": trimmed,
+        "items_count": len(trimmed),
+    }
 
 
 def _apply_schedule_reorder(workspace: Path, task_ids: list[str]) -> dict[str, Any]:

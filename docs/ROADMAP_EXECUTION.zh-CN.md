@@ -310,7 +310,7 @@
 | `SAFETY-N07-D02` | `Done` | `SAFETY-N07` | 关键写 TOML/JSON 语义 noop | 在 D01 基础上对关键 `.toml`/`.json` 做解析后递归键序规范化深比较；SAFETY backlog Explore 本条收口 | `SAFETY-N07-D01` | pytest + smoke |
 | `SAFETY-N08-D01` | `Done` | `SAFETY-N08` | 解限绝对路径跨工作区 | `resolve_tool_path`；文件工具 + `run_command cwd`；工作区外须二次确认；`test_unrestricted_filesystem_paths.py` | `SAFETY-N07-D02` | pytest |
 | `OPS-N01-D01` | `Done` | `HM-04` | 运营侧车探活 **`GET /v1/ops/healthz`**（无 Bearer，**`ops_liveness_v1`**） | `ops_http_server.py`；启动横幅；**`OPS_DYNAMIC_WEB_API*`**；README Web UI 小节 | `HM-N04-D01` | pytest `test_ops_healthz_no_auth_even_with_token` |
-| `OPS-N02-D01` | `Ready` | `HM-04` | Operator 控制面：跨 workspace 写动作路由、租户边界与审计可查询性（契约 + OpenAPI 片段） | `ops_http_server.py`、schema 索引 | `OPS-N01-D01` | pytest + 手工 interactions |
+| `OPS-N02-D01` | `Done` | `HM-04` | Operator 控制面：跨 workspace **审计只读查询**（**`GET /v1/ops/action-audit`** → **`ops_action_audit_query_v1`**）、**`ops_workspaces_v1`** 增加 **`action_audit_url`**、OpenAPI、**`actor_prefix`** 过滤 | `ops_dashboard.py`、`ops_http_server.py`、`api_http_server.py` | `OPS-N01-D01` | pytest + smoke |
 | `GW-N02-D01` | `Design` | `HM-03` | Slash 在真实平台（建议 Slack 或 Discord）上的注册/部署检查清单与 `prod-status` 对齐 | `gateway_production`、平台 runbook | `GW-SLASH-N01` | 清单走查 + CI 可选 |
 | `GW-N02-D02` | `Design` | `HM-N07` | 多工作区联邦：`route-preview` 与可选执行链路（显式 feature flag + 安全评审） | `gateway_lifecycle`、配置 | `GW-N02-D01` | 评审通过后 pytest |
 | `HM-N12-D01` | `Design` | `HM-06` | 云后端 Modal/Daytona 等：仅当 **[`CLOUD_RUNTIME_OOS.zh-CN.md`](CLOUD_RUNTIME_OOS.zh-CN.md)** 门槛满足后 POC | `runtime/registry.py`、`CLOUD_RUNTIME_OOS*` | `HM-N11-D02` | 文档 + 接口对齐 |

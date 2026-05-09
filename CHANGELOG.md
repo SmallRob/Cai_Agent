@@ -4,6 +4,8 @@
 
 ### Unreleased
 
+- **OPS-N02-D01 ops action audit API**: **`cai-agent ops serve`** adds **`GET /v1/ops/action-audit`** (**`ops_action_audit_query_v1`**) with optional **`workspace`** or merged allowlist view; filters **`action`**, **`mode`**, **`ok`**, **`actor_prefix`**, **`limit`**. **`ops_workspaces_v1`** rows include **`action_audit_url`**. Code: **`build_ops_action_audit_query_payload`** in `ops_dashboard.py`; OpenAPI; docs. Tests: full pytest + smoke.
+
 - **Platform surfaces sprint plan**: Added [`docs/PLATFORM_SURFACES_SPRINT_PLAN.zh-CN.md`](docs/PLATFORM_SURFACES_SPRINT_PLAN.zh-CN.md); [`docs/ROADMAP_EXECUTION.zh-CN.md`](docs/ROADMAP_EXECUTION.zh-CN.md) §10 now tracks **`OPS-N01-D01`** (Done), **`OPS-N02-D01`**, **`GW-N02-D01/D02`**, **`HM-N12-D01`**, **`HM-N08-M01`** (Done); developer TODOs / next-actions / canvas gap tracker updated.
 
 - **Ops Web UI**: **`cai-agent ops serve`** exposes **`GET /v1/ops/healthz`** returning **`ops_liveness_v1`** with **no** bearer check (load-balancer friendly). **`build_api_openapi_v1()`** lists the route with **`security: []`**. Root **README** files document step-by-step **`ops serve`** usage; **OPS_DYNAMIC_WEB_API** and **docs/schema/README.zh-CN.md** updated.

@@ -556,7 +556,10 @@ cai-agent ops serve --host 127.0.0.1 --port 8765 [--allow-workspace DIR] … [--
 7. **受控写路径（调度重排、Gateway 绑定编辑、Profile 切换）**  
    使用 **`POST /v1/ops/dashboard/interactions`**；服务端 **`--role`** 为能力上限，请求可带 **`X-CAI-Actor`** / **`X-CAI-Role`**。细节见 [docs/OPS_DYNAMIC_WEB_API.zh-CN.md](docs/OPS_DYNAMIC_WEB_API.zh-CN.md)。
 
-8. **完整契约与阶段说明**  
+8. **操作审计只读查询（跨工作区合并）**  
+   **`GET /v1/ops/action-audit`**：不传 **`workspace`** 时在 **`--allow-workspace`** 列表内合并最近记录；传 **`workspace`** 则只查该根。返回 **`ops_action_audit_query_v1`**。可选过滤 **`action`**、**`mode`**、**`ok`**、**`actor_prefix`**、**`limit`**。
+
+9. **完整契约与阶段说明**  
    [docs/OPS_DYNAMIC_WEB_API.zh-CN.md](docs/OPS_DYNAMIC_WEB_API.zh-CN.md)。平台外表面（Ops / Gateway / Runtime / Voice）的 **Sprint 排期**见 [docs/PLATFORM_SURFACES_SPRINT_PLAN.zh-CN.md](docs/PLATFORM_SURFACES_SPRINT_PLAN.zh-CN.md)。
 
 ---

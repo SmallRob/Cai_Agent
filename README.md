@@ -550,7 +550,9 @@ cai-agent ops serve --host 127.0.0.1 --port 8765 [--allow-workspace DIR] … [--
 
 7. **Controlled writes** (schedule reorder, gateway bind edits, profile switch): **`POST /v1/ops/dashboard/interactions`**; server **`--role`** caps capabilities; optional **`X-CAI-Actor`** / **`X-CAI-Role`**. See [docs/OPS_DYNAMIC_WEB_API.md](docs/OPS_DYNAMIC_WEB_API.md).
 
-8. **Sprint plan** (ops / gateway / cloud runtime / voice): [docs/PLATFORM_SURFACES_SPRINT_PLAN.zh-CN.md](docs/PLATFORM_SURFACES_SPRINT_PLAN.zh-CN.md) (Chinese; normative scheduling table).
+8. **Action audit read API**: **`GET /v1/ops/action-audit`** returns **`ops_action_audit_query_v1`**. Omit **`workspace`** to merge recent audit rows across the ops allowlist; set **`workspace`** to scope to one root. Optional filters: **`action`**, **`mode`**, **`ok`**, **`actor_prefix`**, **`limit`**.
+
+9. **Sprint plan** (ops / gateway / cloud runtime / voice): [docs/PLATFORM_SURFACES_SPRINT_PLAN.zh-CN.md](docs/PLATFORM_SURFACES_SPRINT_PLAN.zh-CN.md) (Chinese; normative scheduling table).
 
 HTTP contract details: [docs/OPS_DYNAMIC_WEB_API.md](docs/OPS_DYNAMIC_WEB_API.md).
 

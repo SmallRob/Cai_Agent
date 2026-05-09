@@ -126,6 +126,8 @@ def test_api_openapi_contract_lists_api_and_ops_routes() -> None:
     assert "/v1/ops/healthz" in paths
     assert paths["/v1/ops/healthz"]["get"].get("security") == []
     assert paths["/v1/ops/healthz"]["get"].get("x-cai-schema-version") == "ops_liveness_v1"
+    assert "/v1/ops/action-audit" in paths
+    assert paths["/v1/ops/action-audit"]["get"].get("x-cai-schema-version") == "ops_action_audit_query_v1"
     assert "/v1/ops/dashboard/interactions" in paths
     assert "/v1/gateway/channel-monitor" in paths
     assert paths["/v1/gateway/channel-monitor"]["get"].get("x-cai-schema-version") == "gateway_channel_monitor_v1"
@@ -138,6 +140,7 @@ def test_api_openapi_contract_lists_api_and_ops_routes() -> None:
     assert "api_doctor_summary_v1" in versions
     assert "api_openai_chat_completion_v1" in versions
     assert "ops_dashboard_v1" in versions
+    assert "ops_action_audit_query_v1" in versions
     assert "ops_dashboard_interactions_v1" in versions
     raw = json.dumps(data, ensure_ascii=False)
     assert "api_key_present" not in raw

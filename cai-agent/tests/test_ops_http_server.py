@@ -12,6 +12,7 @@ from pathlib import Path
 
 import pytest
 
+from cai_agent.ops_dashboard import _append_ops_action_audit
 from cai_agent.ops_http_server import OpsApiRequestHandler, OpsApiThreadingServer
 
 
@@ -61,6 +62,119 @@ def test_ops_healthz_no_auth_even_with_token(tmp_path: Path) -> None:
         assert data.get("schema_version") == "ops_liveness_v1"
         assert data.get("ok") is True
         assert data.get("service") == "cai-agent-ops"
+    finally:
+        httpd.shutdown()
+        httpd.server_close()
+
+
+def test_ops_action_audit_single_workspace_empty(tmp_path: Path) -> None:
+    root = tmp_path.resolve()
+    httpd = _start_server(frozenset({root}), None)
+    try:
+        url = _url(httpd, "/v1/ops/action-audit", {"workspace": str(root)})
+        with urllib.request.urlopen(url, timeout=5) as resp:
+            payload = json.loads(resp.read().decode("utf-8"))
+        assert payload["schema_version"] == "ops_action_audit_query_v1"
+        assert payload["variant"] == "single_workspace"
+        assert payload["workspace"] == str(root)
+        assert payload["items_count"] == 0
+        assert payload["items"] == []
+    finally:
+        httpd.shutdown()
+        httpd.server_close()
+
+
+def test_ops_action_audit_aggregate_merges_allowlist(tmp_path: Path, tmp_path_factory: pytest.TempPathFactory) -> None:
+    a = tmp_path.resolve()
+    b = tmp_path_factory.mktemp("wb").resolve()
+    (a / ".cai").mkdir(parents=True, exist_ok=True)
+    (b / ".cai").mkdir(parents=True, exist_ok=True)
+    _append_ops_action_audit(
+        a,
+        action="gateway_bind_edit_preview",
+        mode="apply",
+        ok=True,
+        summary={"t": "a"},
+        params={},
+        actor="alice",
+        role="admin",
+        workspace_scope={"workspace": str(a)},
+    )
+    _append_ops_action_audit(
+        b,
+        action="schedule_reorder_preview",
+        mode="apply",
+        ok=False,
+        summary={"t": "b"},
+        params={},
+        actor="bob",
+        role="operator",
+        workspace_scope={"workspace": str(b)},
+    )
+    httpd = _start_server(frozenset({a, b}), None)
+    try:
+        url = _url(httpd, "/v1/ops/action-audit", {"limit": "10"})
+        with urllib.request.urlopen(url, timeout=5) as resp:
+            payload = json.loads(resp.read().decode("utf-8"))
+        assert payload["schema_version"] == "ops_action_audit_query_v1"
+        assert payload["variant"] == "aggregate"
+        assert payload["workspace"] is None
+        assert payload["workspaces_scanned"] == 2
+        assert payload["items_count"] == 2
+        workspaces_hit = {str(x.get("workspace")) for x in payload["items"]}
+        assert workspaces_hit == {str(a), str(b)}
+
+        f_url = _url(
+            httpd,
+            "/v1/ops/action-audit",
+            {"workspace": str(a), "action": "gateway_bind_edit_preview", "ok": "true"},
+        )
+        with urllib.request.urlopen(f_url, timeout=5) as resp:
+            one_w = json.loads(resp.read().decode("utf-8"))
+        assert one_w["variant"] == "single_workspace"
+        assert one_w["items_count"] == 1
+        assert one_w["items"][0].get("actor") == "alice"
+
+        ap_url = _url(httpd, "/v1/ops/action-audit", {"actor_prefix": "bo"})
+        with urllib.request.urlopen(ap_url, timeout=5) as resp:
+            ap = json.loads(resp.read().decode("utf-8"))
+        assert ap["items_count"] == 1
+        assert ap["items"][0].get("actor") == "bob"
+    finally:
+        httpd.shutdown()
+        httpd.server_close()
+
+
+def test_ops_action_audit_requires_token_when_configured(tmp_path: Path) -> None:
+    root = tmp_path.resolve()
+    httpd = _start_server(frozenset({root}), "secret-ops")
+    try:
+        url = _url(httpd, "/v1/ops/action-audit", {"workspace": str(root)})
+        with pytest.raises(urllib.error.HTTPError) as ei:
+            urllib.request.urlopen(url, timeout=5)
+        assert ei.value.code == 401
+        req = urllib.request.Request(
+            url,
+            headers={"Authorization": "Bearer secret-ops"},
+            method="GET",
+        )
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            payload = json.loads(resp.read().decode("utf-8"))
+        assert payload["schema_version"] == "ops_action_audit_query_v1"
+    finally:
+        httpd.shutdown()
+        httpd.server_close()
+
+
+def test_ops_action_audit_workspace_forbidden(tmp_path: Path, tmp_path_factory: pytest.TempPathFactory) -> None:
+    root = tmp_path.resolve()
+    other = tmp_path_factory.mktemp("other").resolve()
+    httpd = _start_server(frozenset({root}), None)
+    try:
+        url = _url(httpd, "/v1/ops/action-audit", {"workspace": str(other)})
+        with pytest.raises(urllib.error.HTTPError) as ei:
+            urllib.request.urlopen(url, timeout=5)
+        assert ei.value.code == 403
     finally:
         httpd.shutdown()
         httpd.server_close()
@@ -217,6 +331,7 @@ def test_ops_workspaces_lists_allowlist_only(tmp_path: Path, tmp_path_factory: p
         assert workspaces == {str(root), str(other)}
         assert all(row["allowed"] is True for row in payload["workspaces"])
         assert all("dashboard_url" in row for row in payload["workspaces"])
+        assert all("action_audit_url" in row for row in payload["workspaces"])
     finally:
         httpd.shutdown()
         httpd.server_close()

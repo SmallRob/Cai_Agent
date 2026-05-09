@@ -19,6 +19,7 @@ from urllib.parse import parse_qs, unquote, urlencode, urlparse
 
 from cai_agent.ops_dashboard import (
     _append_ops_action_audit,
+    build_ops_action_audit_query_payload,
     build_ops_dashboard_html,
     build_ops_dashboard_interactions_payload,
     build_ops_dashboard_payload,
@@ -237,6 +238,7 @@ class OpsApiRequestHandler(BaseHTTPRequestHandler):
                 "dashboard_url": "/v1/ops/dashboard?" + urlencode({"workspace": str(root)}),
                 "dashboard_html_url": "/v1/ops/dashboard.html?" + urlencode({"workspace": str(root)}),
                 "interactions_url": "/v1/ops/dashboard/interactions?" + urlencode({"workspace": str(root)}),
+                "action_audit_url": "/v1/ops/action-audit?" + urlencode({"workspace": str(root)}),
             }
             if include_summary and root.is_dir():
                 try:
@@ -289,6 +291,7 @@ class OpsApiRequestHandler(BaseHTTPRequestHandler):
             "/v1/ops/dashboard.html",
             "/v1/ops/dashboard/events",
             "/v1/ops/dashboard/interactions",
+            "/v1/ops/action-audit",
             "/v1/ops/workspaces",
         ):
             self._send_json(404, {"error": "not_found", "path": path})
@@ -339,6 +342,46 @@ class OpsApiRequestHandler(BaseHTTPRequestHandler):
                     cost_session_limit=cost_session_limit,
                 ),
             )
+            return
+
+        if path == "/v1/ops/action-audit":
+            roots: frozenset[Path] = getattr(self.server, "allow_roots", frozenset())
+            try:
+                lim = self._parse_positive_int(one("limit"), 50, name="limit", max_v=500)
+                act_q = one("action")
+                mode_q = one("mode")
+                apfx_q = one("actor_prefix")
+                ok_filter: bool | None = None
+                ok_raw = one("ok")
+                if ok_raw is not None and str(ok_raw).strip() != "":
+                    ok_filter = self._parse_bool(ok_raw)
+            except ValueError as e:
+                self._send_json(400, {"error": "bad_request", "detail": str(e)})
+                return
+            ws_one = one("workspace")
+            workspace_sel: Path | None = None
+            if ws_one and str(ws_one).strip():
+                try:
+                    workspace_sel = Path(unquote(str(ws_one).strip())).expanduser().resolve()
+                except OSError:
+                    self._send_json(400, {"error": "invalid_workspace"})
+                    return
+                if not workspace_sel.is_dir():
+                    self._send_json(400, {"error": "workspace_not_a_directory"})
+                    return
+                if not self._workspace_allowed(workspace_sel):
+                    self._send_json(403, {"error": "workspace_not_allowed"})
+                    return
+            payload_audit = build_ops_action_audit_query_payload(
+                allow_roots=roots,
+                workspace=workspace_sel,
+                limit=lim,
+                action=act_q,
+                mode=mode_q,
+                ok=ok_filter,
+                actor_prefix=apfx_q,
+            )
+            self._send_json(200, payload_audit)
             return
 
         ws_raw = one("workspace")
@@ -618,6 +661,7 @@ def run_ops_api_server(
         f"{'set' if api_token else 'unset'}\n"
         f"  role: {role_norm}\n"
         "  GET /v1/ops/healthz  (no auth; load-balancer probe)\n"
+        "  GET /v1/ops/action-audit?workspace=...&limit=&action=&mode=&ok=&actor_prefix=\n"
         "  GET /v1/ops/workspaces?include_summary=0|1\n"
         "  GET /v1/ops/dashboard?workspace=...&observe_pattern=...\n"
         "  GET /v1/ops/dashboard/interactions?workspace=...&action=...&mode=preview|audit\n"
