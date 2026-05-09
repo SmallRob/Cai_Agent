@@ -84,6 +84,10 @@ git_context = true
 # compact_keep_tail_messages = 8
 # compact_summary_max_chars = 6000
 
+# 发往 LLM 的请求正文启发式脱敏（正则；非 NLP；不读盘；不外传）。off | light | strict；CAI_PRIVACY_FILTER 优先于 TOML。
+# [privacy]
+# filter = "off"
+
 # 默认不强制 compile/test；在 CI 或提交前可把 compile / test 改为 true。
 [quality_gate]
 compile = false

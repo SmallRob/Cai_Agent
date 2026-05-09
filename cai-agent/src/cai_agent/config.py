@@ -260,6 +260,8 @@ class Settings:
     context_compact_trigger_ratio: float
     context_compact_keep_tail_messages: int
     context_compact_summary_max_chars: int
+    # [privacy]：发往模型的消息正文启发式脱敏（非 NLP、不读盘、不外传）；env CAI_PRIVACY_FILTER 优先。
+    privacy_filter_mode: str
     security_scan_exclude_globs: tuple[str, ...]
     security_scan_rule_overrides: tuple[tuple[str, bool], ...]
     permission_write_file: str
@@ -634,6 +636,15 @@ class Settings:
             context_compact_summary_max_chars = max(1000, min(50000, int(raw_sum)))
         else:
             context_compact_summary_max_chars = 6000
+
+        privacy = _section(file_data, "privacy")
+        if os.getenv("CAI_PRIVACY_FILTER") is not None:
+            raw_priv = str(os.getenv("CAI_PRIVACY_FILTER") or "").strip().lower()
+        else:
+            raw_priv = str(privacy.get("filter") or "off").strip().lower()
+        if raw_priv not in ("off", "light", "strict"):
+            raw_priv = "off"
+        privacy_filter_mode = raw_priv
 
         sec_ex = sec.get("exclude_globs")
         if isinstance(sec_ex, list):
@@ -1205,6 +1216,7 @@ class Settings:
             context_compact_trigger_ratio=context_compact_trigger_ratio,
             context_compact_keep_tail_messages=context_compact_keep_tail_messages,
             context_compact_summary_max_chars=context_compact_summary_max_chars,
+            privacy_filter_mode=privacy_filter_mode,
             security_scan_exclude_globs=security_scan_exclude_globs,
             security_scan_rule_overrides=security_scan_rule_overrides,
             permission_write_file=permission_write_file,

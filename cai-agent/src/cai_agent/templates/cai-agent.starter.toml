@@ -33,6 +33,10 @@ git_context = true
 
 [context]
 
+# 发往 LLM 的消息正文启发式脱敏（正则，非 NLP；不扫描磁盘；不外传）。off | light | strict；环境变量 CAI_PRIVACY_FILTER 优先。
+[privacy]
+# filter = "off"
+
 [quality_gate]
 compile = false
 test = false

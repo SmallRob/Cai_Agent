@@ -6,6 +6,8 @@
 
 ### Unreleased
 
+- **CTX-COMPACT-N09 发往模型的隐私过滤**：新增 **`[privacy].filter`**（**`off` / `light` / `strict`**，默认 **`off`**），环境变量 **`CAI_PRIVACY_FILTER`** 优先。**`privacy_filter.py`** 以纯正则做启发式脱敏（凭据形态、轻量 PII、绝对路径；**`strict`** 额外长十六进制与 SSN 形）；在 **`llm_factory`** 适配器派发路径与 **`model_gateway.chat_response`** 内统一作用于消息 **`content`**（覆盖 OpenAI 兼容 **`/v1/chat/completions`**、**`models ping --chat-smoke`** 等所有走 gateway 的出站正文）。**非 NLP**、**不扫描磁盘**、**不外传**。回归 **`test_privacy_filter.py`** + 全量 pytest + smoke。
+
 - **HM-N12-D01 云运行 OOS 机读锚点**：**`runtime_backend_interface_v1`** 中 **`modal`** / **`daytona`** 增补 **`oos_policy`**、**`oos_doc`**、**`gate_ref`**、**`implementation_note`**；**[`CLOUD_RUNTIME_OOS.zh-CN.md`](docs/CLOUD_RUNTIME_OOS.zh-CN.md)** 新增 **§4.3**（**HM-N12-D01**）；不实现真实云执行。回归 **`test_runtime_local`**。
 
 - **GW-N02-D02 联邦 route-preview 执行（审计落盘）**：**`gateway route-preview --execute`** 与 **`POST /v1/gateway/route-preview`**（**`dry_run:false`**）在 **`CAI_GATEWAY_FEDERATION_ROUTE_EXECUTE`**、目标 workspace 白名单（**`CAI_GATEWAY_FEDERATION_ALLOWED_WORKSPACES`**）与目标 **`target_profile_id`** 校验通过时，向源工作区 **`.cai/gateway/federation-route-audit.jsonl`** 追加 **`gateway_federation_route_audit_v1`**；可选 **`CAI_GATEWAY_FEDERATION_ROUTE_EXECUTE_TOKEN`** 与头 **`X-Cai-Federation-Execute-Token`**。不调用 LLM、不拉起子进程。实现 **`build_gateway_proxy_route_preview`**（`gateway_lifecycle.py`）；API/CLI；测试与 schema README。

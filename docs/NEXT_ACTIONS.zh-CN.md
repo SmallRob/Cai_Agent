@@ -14,11 +14,10 @@
 
 | 顺位 | 任务 | 状态 | 验收 |
 |---|---|---|---|
-| 1 | `CTX-COMPACT-N09` | Explore | 上下文安全/隐私过滤 |
+| 1 | `CTX-COMPACT-N10` | Ready | 真实模型回归样本集（fixtures + QA 基线） |
 
 ## 后续队列
 
-- `CTX-COMPACT-N09`：安全/隐私过滤
 - `CTX-COMPACT-N10`：真实模型回归样本集
 
 ## 条件与边界
@@ -33,6 +32,7 @@
 
 | 任务 | 日期 | 摘要 | 验证 |
 |---|---|---|---|
+| `CTX-COMPACT-N09` | 2026-05-10 | Outgoing LLM privacy filter: [privacy].filter and CAI_PRIVACY_FILTER (off/light/strict), privacy_filter.py, wired in llm_factory for all chat dispatches including OpenAI-compatible API. | python -m pytest -q cai-agent/tests: PASS (1019 passed, 20 subtests)<br>python scripts/smoke_new_features.py: NEW_FEATURE_CHECKS_OK |
 | `HM-N12-D01` | 2026-05-10 | CLOUD_RUNTIME_OOS §4.3 + runtime_backend_interface_v1 oos_policy/oos_doc/gate_ref for modal and daytona; no cloud execution. | python -m pytest -q cai-agent/tests: PASS (1010 passed, 20 subtests)<br>python scripts/smoke_new_features.py: NEW_FEATURE_CHECKS_OK |
 | `GW-N02-D02` | 2026-05-10 | route-preview dry_run:false: federation-route-audit.jsonl (gateway_federation_route_audit_v1), env CAI_GATEWAY_FEDERATION_ROUTE_EXECUTE, allowlist, optional execute token header; CLI --execute. | python -m pytest -q cai-agent/tests: PASS (1010 passed, 20 subtests)<br>python scripts/smoke_new_features.py: NEW_FEATURE_CHECKS_OK |
 | `GW-N02-D01` | 2026-05-10 | gateway_slash_deploy_check_v1: CLI gateway slash-deploy-check, GET /v1/gateway/slash-deploy-check, prod-status slash_deploy_check; build_gateway_slash_deploy_check_payload in gateway_production.py. | python -m pytest -q cai-agent/tests: PASS (1007 passed, 20 subtests)<br>python scripts/smoke_new_features.py: NEW_FEATURE_CHECKS_OK |

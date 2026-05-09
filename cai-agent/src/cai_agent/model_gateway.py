@@ -16,6 +16,7 @@ from typing import Any, Protocol
 from cai_agent import llm as _openai_adapter
 from cai_agent import llm_anthropic as _anthropic_adapter
 from cai_agent.llm import get_last_usage
+from cai_agent.privacy_filter import filter_outgoing_chat_messages
 from cai_agent.profiles import Profile, project_base_url
 
 
@@ -315,6 +316,8 @@ def chat_response(
 ) -> ModelResponse:
     """Run chat through the normalized gateway response contract."""
 
+    mode = str(getattr(settings, "privacy_filter_mode", "off") or "off").strip().lower()
+    messages = filter_outgoing_chat_messages(mode, messages)
     return adapter_for_provider(_provider_from_settings(settings)).chat_response(
         settings,
         messages,

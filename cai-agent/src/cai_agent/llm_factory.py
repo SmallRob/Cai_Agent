@@ -35,6 +35,7 @@ from cai_agent.model_routing import (
     first_matching_routing_rule,
     routing_goal_from_messages,
 )
+from cai_agent.privacy_filter import filter_outgoing_chat_messages
 from cai_agent.profiles import (
     Profile,
     get_profile_by_id,
@@ -81,8 +82,14 @@ def _adapter_for(provider_canonical: str) -> ChatFn:
     return _openai_adapter.chat_completion
 
 
+def _privacy_filtered_messages(settings: Any, messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    mode = str(getattr(settings, "privacy_filter_mode", "off") or "off").strip().lower()
+    return filter_outgoing_chat_messages(mode, messages)
+
+
 def chat_completion(settings: Any, messages: list[dict[str, Any]]) -> str:
     """按 ``resolve_provider(settings)`` 直接派发到底层适配器，不做 profile 投影。"""
+    messages = _privacy_filtered_messages(settings, messages)
     return _adapter_for(resolve_provider(settings))(settings, messages)
 
 
@@ -283,6 +290,7 @@ def chat_completion_by_role(
         route_conversation_phase=route_conversation_phase,
     )
     projected = _project_settings_for_profile(settings, profile)
+    messages = _privacy_filtered_messages(projected, messages)
     return _adapter_for(resolve_provider(projected))(projected, messages)
 
 
