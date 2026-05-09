@@ -123,6 +123,9 @@ def test_api_openapi_contract_lists_api_and_ops_routes() -> None:
     assert "/v1/models" in paths
     assert "/v1/chat/completions" in paths
     assert "/v1/ops/dashboard" in paths
+    assert "/v1/ops/healthz" in paths
+    assert paths["/v1/ops/healthz"]["get"].get("security") == []
+    assert paths["/v1/ops/healthz"]["get"].get("x-cai-schema-version") == "ops_liveness_v1"
     assert "/v1/ops/dashboard/interactions" in paths
     assert "/v1/gateway/channel-monitor" in paths
     assert paths["/v1/gateway/channel-monitor"]["get"].get("x-cai-schema-version") == "gateway_channel_monitor_v1"

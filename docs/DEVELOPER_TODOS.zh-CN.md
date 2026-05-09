@@ -8,13 +8,17 @@
 
 | 顺位 | 子任务 ID | 状态 | 开发目标 | 代码入口 | 完成门槛 |
 |---|---|---|---|---|---|
-| - | - | Clear | 解限 SAFETY 路线图当前 **无排队开发项**（含 **`SAFETY-N08-D01`** 跨工作区绝对路径、`SAFETY-N07-D02`；更深 YAML/semver 等须另立项） | — | — |
+| 1 | `OPS-N02-D01` | Ready | Operator 控制面：跨 workspace 写路径与租户边界（HTTP 契约 / OpenAPI / 审计查询） | `cai_agent/ops_http_server.py`、`docs/schema` | pytest `test_ops_http_server` + 文档 |
+| 2 | `GW-N02-D01` | Design | Slash 真实平台注册/部署检查（Slack 或 Discord 优先） | `gateway_production`、**`docs/GATEWAY_*`** | 清单 + `prod-status` 字段评审 |
+| 3 | `GW-N02-D02` | Design | 联邦执行链路（`route-preview` → 可选实跑，feature flag） | `cai_agent/gateway_*` | RFC 评审后再实现 |
+| 4 | `HM-N12-D01` | Design | Modal/Daytona 云后端 POC（仅过 **`CLOUD_RUNTIME_OOS`** 门槛后） | `docs/CLOUD_RUNTIME_OOS*`、`runtime/` | 文档门槛复核 + stub 契约 |
 
 ## 执行顺序
 
-1. **解限与安全**：全景清单 [`SAFETY_UNRESTRICTED_BACKLOG.zh-CN.md`](SAFETY_UNRESTRICTED_BACKLOG.zh-CN.md)；**P0–P4**、**`SAFETY-N08-D01`**（跨工作区绝对路径）与 **`SAFETY-N07-D01/D02`** 均已收口，清单 **Explore 已清零**。
-2. 若并行上下文面：优先 `CTX-COMPACT-N09` 安全/隐私过滤或 `CTX-COMPACT-N10` 真实模型回归样本集。
-3. 若暂停上下文面：再回到 Gateway slash 深化或 Ops operator 路由深化中选择。
+1. **平台外表面 Sprint**：总表 [`PLATFORM_SURFACES_SPRINT_PLAN.zh-CN.md`](PLATFORM_SURFACES_SPRINT_PLAN.zh-CN.md)；**`OPS-N01-D01`（healthz）** 与 **`HM-N08-M01`（Voice MCP runbook）** 已合入；实现队列从 **`OPS-N02-D01`** 开始。
+2. **解限与安全**：全景清单 [`SAFETY_UNRESTRICTED_BACKLOG.zh-CN.md`](SAFETY_UNRESTRICTED_BACKLOG.zh-CN.md)；**P0–P4**、**`SAFETY-N08-D01`** 与 **`SAFETY-N07-D01/D02`** 已收口；更深项须另立项。
+3. 若并行上下文面：优先 **`CTX-COMPACT-N09`** / **`CTX-COMPACT-N10`**。
+4. Gateway 与联邦：在 **`GW-N02-D01`** 设计冻结后再开 **`GW-N02-D02`** 实现单。
 
 ## 每个任务的统一要求
 

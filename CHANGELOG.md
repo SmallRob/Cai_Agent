@@ -4,6 +4,12 @@
 
 ### Unreleased
 
+- **Platform surfaces sprint plan**: Added [`docs/PLATFORM_SURFACES_SPRINT_PLAN.zh-CN.md`](docs/PLATFORM_SURFACES_SPRINT_PLAN.zh-CN.md); [`docs/ROADMAP_EXECUTION.zh-CN.md`](docs/ROADMAP_EXECUTION.zh-CN.md) §10 now tracks **`OPS-N01-D01`** (Done), **`OPS-N02-D01`**, **`GW-N02-D01/D02`**, **`HM-N12-D01`**, **`HM-N08-M01`** (Done); developer TODOs / next-actions / canvas gap tracker updated.
+
+- **Ops Web UI**: **`cai-agent ops serve`** exposes **`GET /v1/ops/healthz`** returning **`ops_liveness_v1`** with **no** bearer check (load-balancer friendly). **`build_api_openapi_v1()`** lists the route with **`security: []`**. Root **README** files document step-by-step **`ops serve`** usage; **OPS_DYNAMIC_WEB_API** and **docs/schema/README.zh-CN.md** updated.
+
+- **Voice (MCP path)**: Added [`docs/VOICE_MCP_RUNBOOK.md`](docs/VOICE_MCP_RUNBOOK.md) / [`docs/VOICE_MCP_RUNBOOK.zh-CN.md`](docs/VOICE_MCP_RUNBOOK.zh-CN.md); README adds a short Voice section.
+
 - **Feature**: Structured memory (`memory/entries.jsonl`) is injected into the system prompt by default for both **TUI** and **CLI** agent runs via `augment_system_prompt`. Configure with **`[memory.inject]`** (`enabled`, `max_entries`, `max_chars`, `include_stale`, `stale_after_days`, `min_active_confidence`) or env vars **`CAI_MEMORY_INJECT_*`**. `load_memory_entries_validated` now reads via a readonly path so listing/injection does not create empty `memory/` directories. **`doctor` / `GET /v1/doctor/summary`** expose **`memory_inject`**. Tests: **`test_memory_prompt_inject.py`**.
 
 - **Fix**: `cai-agent doctor` human-readable output used Unicode arrows (**`→`**, **`↔`**) that crash on Windows consoles limited to **GBK** (**`UnicodeEncodeError`**). Those labels now use ASCII (**`->`**, **`<->`**).

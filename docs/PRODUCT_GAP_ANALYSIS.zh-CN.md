@@ -59,7 +59,7 @@
 | `P0` 外部入口补齐 | `CC-N01`、`HM-N01` | 在模型地基稳定后，补安装/修复、profile home 这些最影响“别人怎么接入我们”的能力；**`CC-N02` 反馈线已 Done**；`HM-N02` 已由 OpenAI-compatible API server 收口 |
 | `P0` 状态清账 | 已完成：`SYNC-N01` | 已实现的 API/OPS/CC/GW/ECC 新 ID 已归档，TODO / roadmap / parity 已收口 |
 | `P1` 可插拔/可验证/可编排 | 已完成：`MEM-N01`、`RT-N01`、`WF-N01` | memory provider adapter contract、Docker/SSH 分层验证矩阵、workflow/subagent branch/retry/aggregate 已有代码或验证入口 |
-| `P2` 受控自动化与 operator 面 | 已完成：`BRW-N04`、`BRW-N05`、`OPS-RBAC-N01`、`OPS-MW-N01`、`GW-CHAN-N01`、`GW-SLASH-N01`；候选：Gateway slash 真实部署检查、更完整 Ops operator 路由面 | Browser MCP executor、artifact/audit manifest、ops serve RBAC、allowlist 多 workspace 发现、独立 channel-monitor 与 slash catalog 已落地；下一步补 operator/gateway 深化 |
+| `P2` 受控自动化与 operator 面 | 进行中：`OPS-N02-D01`（operator 控制面）、`GW-N02-D01/D02`（Slash 部署与联邦执行，设计阶段）；已完成：`BRW-N04`、`BRW-N05`、`OPS-RBAC-N01`、`OPS-MW-N01`、`GW-CHAN-N01`、`GW-SLASH-N01`、`OPS-N01-D01`（`/v1/ops/healthz`） | 详见 [`PLATFORM_SURFACES_SPRINT_PLAN.zh-CN.md`](PLATFORM_SURFACES_SPRINT_PLAN.zh-CN.md) |
 | `P3` 条件/预研项 | `CC-N07`、`HM-N11` | 云 runtime 等仍按授权、安全、计费、隔离门槛处理 |
 
 **Browser automation 补充**：本轮已把浏览器能力定为 `MCP first`。默认路径见 [`BROWSER_MCP.zh-CN.md`](BROWSER_MCP.zh-CN.md)，治理边界见 [`BROWSER_PROVIDER_RFC.zh-CN.md`](BROWSER_PROVIDER_RFC.zh-CN.md)；当前不把 browser-use 或 Skyvern 作为默认依赖，后续执行器必须先满足凭据、下载、上传、allowlist、审计与许可证边界。

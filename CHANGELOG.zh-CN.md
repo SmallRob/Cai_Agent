@@ -6,6 +6,12 @@
 
 ### Unreleased
 
+- **平台外表面 Sprint 文档**：新增 [`docs/PLATFORM_SURFACES_SPRINT_PLAN.zh-CN.md`](docs/PLATFORM_SURFACES_SPRINT_PLAN.zh-CN.md)；[`ROADMAP_EXECUTION.zh-CN.md`](docs/ROADMAP_EXECUTION.zh-CN.md) §10 登记 **`OPS-N01-D01`**（Done）、**`OPS-N02-D01`**、**`GW-N02-D01/D02`**、**`HM-N12-D01`**、**`HM-N08-M01`**（Done）；[`DEVELOPER_TODOS.zh-CN.md`](docs/DEVELOPER_TODOS.zh-CN.md) / [`NEXT_ACTIONS.zh-CN.md`](docs/NEXT_ACTIONS.zh-CN.md) / [`canvas/GAP_TRACKER.md`](docs/canvas/GAP_TRACKER.md) 已镜像队列。
+
+- **Ops Web UI**：**`cai-agent ops serve`** 新增 **`GET /v1/ops/healthz`**，返回 **`ops_liveness_v1`**，**不校验** Bearer（便于负载均衡探活）。**`build_api_openapi_v1()`** 增加同路径登记且 **`security: []`**。根 **`README.md` / `README.zh-CN.md`** 增补 **ops serve** 分步使用说明；[`OPS_DYNAMIC_WEB_API*.md`](docs/OPS_DYNAMIC_WEB_API.zh-CN.md) 与 [`docs/schema/README.zh-CN.md`](docs/schema/README.zh-CN.md) 已索引。
+
+- **Voice（MCP 默认路径）**：新增 [`docs/VOICE_MCP_RUNBOOK.zh-CN.md`](docs/VOICE_MCP_RUNBOOK.zh-CN.md) / [`docs/VOICE_MCP_RUNBOOK.md`](docs/VOICE_MCP_RUNBOOK.md)；README 增加 **Voice** 小节互链。
+
 - **功能**：结构化记忆（**`memory/entries.jsonl`**）默认注入 **TUI** 与 **CLI** 共用的 system prompt（**`augment_system_prompt`**）。可通过 **`[memory.inject]`**（**`enabled`**、**`max_entries`**、**`max_chars`**、**`include_stale`**、**`stale_after_days`**、**`min_active_confidence`**）或环境变量 **`CAI_MEMORY_INJECT_*`** 调整。**`load_memory_entries_validated`** 改为只读路径访问，避免纯读取时创建空 **`memory/`** 目录。**`doctor` / `GET /v1/doctor/summary`** 增加 **`memory_inject`** 字段。回归 **`test_memory_prompt_inject.py`**。
 
 - **修复**：`cai-agent doctor` 人类可读输出曾含 **`→`**、**`↔`** 等 Unicode，在受限为 **GBK** 的 Windows 控制台会因 **`UnicodeEncodeError`** 崩溃；相关文案已改为 ASCII（**`->`**、**`<->`**）。

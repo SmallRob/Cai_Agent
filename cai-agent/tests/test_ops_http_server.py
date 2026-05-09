@@ -49,6 +49,23 @@ def _post_json(
     )
 
 
+def test_ops_healthz_no_auth_even_with_token(tmp_path: Path) -> None:
+    root = tmp_path.resolve()
+    httpd = _start_server(frozenset({root}), "secret-token")
+    try:
+        host, port = httpd.server_address
+        url = f"http://{host}:{port}/v1/ops/healthz"
+        with urllib.request.urlopen(url, timeout=5) as resp:
+            assert resp.status == 200
+            data = json.loads(resp.read().decode("utf-8"))
+        assert data.get("schema_version") == "ops_liveness_v1"
+        assert data.get("ok") is True
+        assert data.get("service") == "cai-agent-ops"
+    finally:
+        httpd.shutdown()
+        httpd.server_close()
+
+
 def test_ops_dashboard_missing_workspace(tmp_path: Path) -> None:
     root = tmp_path.resolve()
     httpd = _start_server(frozenset({root}), None)

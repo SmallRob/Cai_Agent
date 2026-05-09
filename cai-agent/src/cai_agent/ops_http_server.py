@@ -1,4 +1,4 @@
-"""只读运营 HTTP 侧车（Phase B）：``GET /v1/ops/dashboard`` / ``dashboard.html``。
+"""只读运营 HTTP 侧车（Phase B）：``GET /v1/ops/healthz``（探活，无鉴权）、``GET /v1/ops/dashboard`` / ``dashboard.html``。
 
 与 ``build_ops_dashboard_payload`` / ``build_ops_dashboard_html`` 同源；契约见仓库
 ``docs/OPS_DYNAMIC_WEB_API.zh-CN.md`` §3。
@@ -278,6 +278,12 @@ class OpsApiRequestHandler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:  # noqa: N802
         parsed = urlparse(self.path)
         path = parsed.path or ""
+        if path == "/v1/ops/healthz":
+            self._send_json(
+                200,
+                {"ok": True, "service": "cai-agent-ops", "schema_version": "ops_liveness_v1"},
+            )
+            return
         if path not in (
             "/v1/ops/dashboard",
             "/v1/ops/dashboard.html",
@@ -611,6 +617,7 @@ def run_ops_api_server(
         "  CAI_OPS_API_TOKEN/CAI_API_TOKEN: "
         f"{'set' if api_token else 'unset'}\n"
         f"  role: {role_norm}\n"
+        "  GET /v1/ops/healthz  (no auth; load-balancer probe)\n"
         "  GET /v1/ops/workspaces?include_summary=0|1\n"
         "  GET /v1/ops/dashboard?workspace=...&observe_pattern=...\n"
         "  GET /v1/ops/dashboard/interactions?workspace=...&action=...&mode=preview|audit\n"

@@ -523,10 +523,41 @@ cai-agent plugins --compat-check
 cai-agent observe --json
 cai-agent observe-report …
 cai-agent ops dashboard --format json|text|html
-cai-agent ops serve …
+cai-agent ops serve --host 127.0.0.1 --port 8765 [--allow-workspace DIR] … [--role viewer|operator|admin]
 ```
 
-HTTP 侧车与路径说明见 [docs/OPS_DYNAMIC_WEB_API.zh-CN.md](docs/OPS_DYNAMIC_WEB_API.zh-CN.md)（或英文 `docs/OPS_DYNAMIC_WEB_API.md`）。若设置 `CAI_OPS_API_TOKEN`，请求需带 `Authorization: Bearer …`。
+### 运营 Web UI（`ops serve`）怎么用
+
+1. **启动侧车**（默认只放行当前目录；多仓库可重复传入 `--allow-workspace <绝对路径>`）  
+   在要监控的仓库根执行：  
+   `cai-agent ops serve --host 127.0.0.1 --port 8765`  
+   或：  
+   `cai-agent ops serve --allow-workspace D:\repo\A --allow-workspace D:\repo\B`
+
+2. **探活（负载均衡 / K8s）**  
+   `GET http://127.0.0.1:8765/v1/ops/healthz`  
+   返回 **`ops_liveness_v1`**，**不要求** `Authorization`（与 dashboard 等路由不同）。
+
+3. **浏览器里看动态面板**  
+   打开：  
+   `http://127.0.0.1:8765/v1/ops/dashboard.html?workspace=<URL 编码后的工作区绝对路径>`  
+   可选查询参数：  
+   **`live_mode=sse|poll`**、**`live_interval_seconds=…`**（与 [docs/OPS_DYNAMIC_WEB_API.zh-CN.md](docs/OPS_DYNAMIC_WEB_API.zh-CN.md) 一致）、**`html_refresh_seconds`**。
+
+4. **拉 JSON 载荷**（与 CLI `ops dashboard --format json` 同源）  
+   `GET /v1/ops/dashboard?workspace=…`（`workspace` 必填且在 allowlist 内）。
+
+5. **多工作区目录**  
+   `GET /v1/ops/workspaces`；可加 `include_summary=1` 带每个根的摘要。
+
+6. **鉴权**  
+   若设置环境变量 **`CAI_OPS_API_TOKEN`**（或兼容 **`CAI_API_TOKEN`**），除 **`/v1/ops/healthz`** 外须在请求头加 **`Authorization: Bearer <token>`**。
+
+7. **受控写路径（调度重排、Gateway 绑定编辑、Profile 切换）**  
+   使用 **`POST /v1/ops/dashboard/interactions`**；服务端 **`--role`** 为能力上限，请求可带 **`X-CAI-Actor`** / **`X-CAI-Role`**。细节见 [docs/OPS_DYNAMIC_WEB_API.zh-CN.md](docs/OPS_DYNAMIC_WEB_API.zh-CN.md)。
+
+8. **完整契约与阶段说明**  
+   [docs/OPS_DYNAMIC_WEB_API.zh-CN.md](docs/OPS_DYNAMIC_WEB_API.zh-CN.md)。平台外表面（Ops / Gateway / Runtime / Voice）的 **Sprint 排期**见 [docs/PLATFORM_SURFACES_SPRINT_PLAN.zh-CN.md](docs/PLATFORM_SURFACES_SPRINT_PLAN.zh-CN.md)。
 
 ---
 
@@ -563,6 +594,12 @@ cai-agent feedback list
 cai-agent doctor --json
 cai-agent repair …
 ```
+
+---
+
+## Voice（默认 OOS / MCP）
+
+不默认内置实时双向语音。CLI 诊断：**`cai-agent voice config|check`**；推荐通过 **MCP** 接入 STT/TTS，说明见 **[docs/VOICE_MCP_RUNBOOK.zh-CN.md](docs/VOICE_MCP_RUNBOOK.zh-CN.md)**。
 
 ---
 

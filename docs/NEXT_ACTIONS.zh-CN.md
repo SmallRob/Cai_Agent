@@ -8,19 +8,20 @@
 ## 当前目标
 
 - **解限安全**：[`SAFETY_UNRESTRICTED_BACKLOG.zh-CN.md`](SAFETY_UNRESTRICTED_BACKLOG.zh-CN.md) 清单 **P4 已全部 Done**；**`SAFETY-N08-D01`** 解限下 **绝对路径可跨 `[agent].workspace`**（工作区外路径默认仍须二次确认）；**`SAFETY-N07-D01/D02`** 关键写 noop（可关）；清单 **Explore 已清零**，更深项需另立项评审。
+- **平台外表面 Sprint**：[`PLATFORM_SURFACES_SPRINT_PLAN.zh-CN.md`](PLATFORM_SURFACES_SPRINT_PLAN.zh-CN.md)（Ops / Gateway / 云 Runtime / Voice）；**`OPS-N01-D01`**（**`/v1/ops/healthz`**）与 **`HM-N08-M01`**（[`VOICE_MCP_RUNBOOK.zh-CN.md`](VOICE_MCP_RUNBOOK.zh-CN.md)）已落地；README 已补 **ops Web UI** 用法。
 
 ## 现在做
 
 | 顺位 | 任务 | 状态 | 验收 |
 |---|---|---|---|
-| - | - | Clear | 解限 SAFETY **无当前排队项**（含 `SAFETY-N08-D01`、`SAFETY-N07-D02`）；下一优先见下方「后续队列」 |
+| 1 | `OPS-N02-D01` | Ready | Operator 控制面契约 + OpenAPI 片段 + pytest |
 
 ## 后续队列
 
 - `CTX-COMPACT-N09`：安全/隐私过滤
 - `CTX-COMPACT-N10`：真实模型回归样本集
-- Gateway 深化（候选）：slash command 深化、多 workspace federation 的真实部署检查
-- Ops operator 路由深化（候选）：在 RBAC / workspaces 发现基础上继续补跨 workspace 操作路由与租户边界
+- `GW-N02-D01` / `GW-N02-D02`：Slash 真实部署检查、联邦执行链路（设计冻结后实现）
+- `HM-N12-D01`：云后端 Modal/Daytona（**[`CLOUD_RUNTIME_OOS.zh-CN.md`](CLOUD_RUNTIME_OOS.zh-CN.md)** 门槛）
 
 ## 条件与边界
 

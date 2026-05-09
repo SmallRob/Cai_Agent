@@ -14,6 +14,7 @@ Chinese mirror (same normative content, Chinese prose): [`OPS_DYNAMIC_WEB_API.zh
 | Read-only HTTP (Phase B) | `ops serve [--host H] [--port P] [--allow-workspace DIR…]` | **`cai_agent.ops_http_server`**: **`GET /v1/ops/dashboard`** (JSON) and **`GET /v1/ops/dashboard.html`**; **`workspace`** query parameter is **required** and must be on the server allowlist |
 | RBAC write paths (OPS-RBAC-N01) | `ops serve --role viewer\|operator\|admin` | `viewer` is read/preview/audit only; `operator` may apply schedule reorder and gateway binding edits; `admin` may also apply profile switches; denied writes are audited |
 | Multi-workspace discovery (OPS-MW-N01) | `GET /v1/ops/workspaces` | Lists only the server `--allow-workspace` allowlist; `include_summary=1` aggregates each workspace dashboard summary |
+| Liveness | `GET /v1/ops/healthz` | **`ops_liveness_v1`** JSON; **no bearer auth** (for load balancers) |
 
 CLI flags for `ops dashboard` (see **`cai_agent/__main__.py`**): **`--pattern`**, **`--limit`**, **`--schedule-days`**, **`--audit-file`**, **`--html-refresh-seconds`**.
 
@@ -28,6 +29,12 @@ HTTP **`GET /v1/ops/dashboard.html`** accepts the same query keys as JSON plus o
 ## 3. REST contract (implemented by **`ops serve`**)
 
 Base path is fixed as below (integrators may reverse-proxy under **`/api`**, etc.).
+
+### 3.0 `GET /v1/ops/healthz`
+
+Load-balancer probe. **Does not** require **`CAI_OPS_API_TOKEN`**.
+
+**200** JSON: **`ops_liveness_v1`**, e.g. `{"ok": true, "service": "cai-agent-ops", "schema_version": "ops_liveness_v1"}`.
 
 ### 3.1 `GET /v1/ops/dashboard`
 

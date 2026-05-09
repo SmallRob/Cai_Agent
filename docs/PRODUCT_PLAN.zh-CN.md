@@ -140,6 +140,7 @@
 | **ECC 线** | rules / skills / hooks 的资产化、`model-route`、**`cost report` + compact 策略说明**、插件与跨 harness 深化 |
 | **共享项** | 中英文文档同步、反馈闭环、发布闭环、OOS / MCP 备案机制 |
 | **明确 OOS** | 依赖封闭企业能力的官方专属特性、默认多 CLI 套件模式 |
+| **平台外表面 Sprint** | Ops operator 深化、Gateway Slash/联邦、云 runtime 条件项、Voice MCP：见 [`PLATFORM_SURFACES_SPRINT_PLAN.zh-CN.md`](PLATFORM_SURFACES_SPRINT_PLAN.zh-CN.md) 与 `ROADMAP_EXECUTION` §10 新 backlog 行 |
 
 ### 3.3 QA 移交顺序
 

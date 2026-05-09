@@ -309,6 +309,12 @@
 | `SAFETY-N07-D01` | `Done` | `SAFETY-N07` | 关键写 noop 启发式 | `[safety].dangerous_critical_write_skip_if_unchanged` + `needs_dangerous_confirmation` 读盘 UTF-8 规范化比对；doctor / `tools guard` policy；模板注释 | `SAFETY-N06-D01` | pytest + smoke |
 | `SAFETY-N07-D02` | `Done` | `SAFETY-N07` | 关键写 TOML/JSON 语义 noop | 在 D01 基础上对关键 `.toml`/`.json` 做解析后递归键序规范化深比较；SAFETY backlog Explore 本条收口 | `SAFETY-N07-D01` | pytest + smoke |
 | `SAFETY-N08-D01` | `Done` | `SAFETY-N08` | 解限绝对路径跨工作区 | `resolve_tool_path`；文件工具 + `run_command cwd`；工作区外须二次确认；`test_unrestricted_filesystem_paths.py` | `SAFETY-N07-D02` | pytest |
+| `OPS-N01-D01` | `Done` | `HM-04` | 运营侧车探活 **`GET /v1/ops/healthz`**（无 Bearer，**`ops_liveness_v1`**） | `ops_http_server.py`；启动横幅；**`OPS_DYNAMIC_WEB_API*`**；README Web UI 小节 | `HM-N04-D01` | pytest `test_ops_healthz_no_auth_even_with_token` |
+| `OPS-N02-D01` | `Ready` | `HM-04` | Operator 控制面：跨 workspace 写动作路由、租户边界与审计可查询性（契约 + OpenAPI 片段） | `ops_http_server.py`、schema 索引 | `OPS-N01-D01` | pytest + 手工 interactions |
+| `GW-N02-D01` | `Design` | `HM-03` | Slash 在真实平台（建议 Slack 或 Discord）上的注册/部署检查清单与 `prod-status` 对齐 | `gateway_production`、平台 runbook | `GW-SLASH-N01` | 清单走查 + CI 可选 |
+| `GW-N02-D02` | `Design` | `HM-N07` | 多工作区联邦：`route-preview` 与可选执行链路（显式 feature flag + 安全评审） | `gateway_lifecycle`、配置 | `GW-N02-D01` | 评审通过后 pytest |
+| `HM-N12-D01` | `Design` | `HM-06` | 云后端 Modal/Daytona 等：仅当 **[`CLOUD_RUNTIME_OOS.zh-CN.md`](CLOUD_RUNTIME_OOS.zh-CN.md)** 门槛满足后 POC | `runtime/registry.py`、`CLOUD_RUNTIME_OOS*` | `HM-N11-D02` | 文档 + 接口对齐 |
+| `HM-N08-M01` | `Done` | `HM-07` | Voice 默认 MCP 路径 runbook 与入口互链 | **[`VOICE_MCP_RUNBOOK.zh-CN.md`](VOICE_MCP_RUNBOOK.zh-CN.md)**、**[`VOICE_MCP_RUNBOOK.md`](VOICE_MCP_RUNBOOK.md)**、README | `HM-N08-D04` | 文档走查 |
 
 ### 10.1 建议开单顺序
 
@@ -345,4 +351,4 @@
 
 ---
 
-*文档版本：2026-04-25。若三上游产品面发生明显变化，先更新 [`PRODUCT_GAP_ANALYSIS.zh-CN.md`](PRODUCT_GAP_ANALYSIS.zh-CN.md) 与本页，再决定是否进入新周期。*
+*文档版本：2026-05-10。若三上游产品面发生明显变化，先更新 [`PRODUCT_GAP_ANALYSIS.zh-CN.md`](PRODUCT_GAP_ANALYSIS.zh-CN.md) 与本页，再决定是否进入新周期。*

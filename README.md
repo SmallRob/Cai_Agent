@@ -531,8 +531,26 @@ cai-agent plugins --compat-check
 cai-agent observe --json
 cai-agent observe-report …
 cai-agent ops dashboard --format json|text|html
-cai-agent ops serve …               # read-only HTTP sidecar; optional CAI_OPS_API_TOKEN
+cai-agent ops serve --host 127.0.0.1 --port 8765 [--allow-workspace DIR] … [--role viewer|operator|admin]
 ```
+
+### Using the ops Web UI (`ops serve`)
+
+1. **Start the sidecar** (by default only the current directory is allowed; pass **`--allow-workspace <absolute-dir>`** repeatedly for multiple repos).
+
+2. **Liveness / probes**: **`GET http://127.0.0.1:8765/v1/ops/healthz`** returns **`ops_liveness_v1`** and **does not** require **`Authorization`** (unlike dashboard routes).
+
+3. **Browser dashboard**: open **`/v1/ops/dashboard.html?workspace=<url-encoded-absolute-path>`**; optional **`live_mode=sse|poll`**, **`live_interval_seconds`**, **`html_refresh_seconds`**.
+
+4. **JSON**: **`GET /v1/ops/dashboard?workspace=…`** (required, allowlisted).
+
+5. **Workspace index**: **`GET /v1/ops/workspaces`** with optional **`include_summary=1`**.
+
+6. **Auth**: if **`CAI_OPS_API_TOKEN`** (or **`CAI_API_TOKEN`**) is set, send **`Authorization: Bearer …`** for all routes **except** **`/v1/ops/healthz`**.
+
+7. **Controlled writes** (schedule reorder, gateway bind edits, profile switch): **`POST /v1/ops/dashboard/interactions`**; server **`--role`** caps capabilities; optional **`X-CAI-Actor`** / **`X-CAI-Role`**. See [docs/OPS_DYNAMIC_WEB_API.md](docs/OPS_DYNAMIC_WEB_API.md).
+
+8. **Sprint plan** (ops / gateway / cloud runtime / voice): [docs/PLATFORM_SURFACES_SPRINT_PLAN.zh-CN.md](docs/PLATFORM_SURFACES_SPRINT_PLAN.zh-CN.md) (Chinese; normative scheduling table).
 
 HTTP contract details: [docs/OPS_DYNAMIC_WEB_API.md](docs/OPS_DYNAMIC_WEB_API.md).
 
@@ -571,6 +589,12 @@ cai-agent feedback list
 cai-agent doctor --json
 cai-agent repair …                  # guided fixes where implemented
 ```
+
+---
+
+## Voice (default OOS / MCP)
+
+No default real-time duplex voice product. Use **`cai-agent voice config|check`** for local contract status; prefer **MCP** for STT/TTS. See **[docs/VOICE_MCP_RUNBOOK.md](docs/VOICE_MCP_RUNBOOK.md)**.
 
 ---
 

@@ -276,6 +276,14 @@ def build_api_openapi_v1() -> dict[str, Any]:
         "/v1/gateway/route-preview": {"post": _op(method="postGatewayRoutePreview", summary="Dry-run gateway route preview", schema_version="gateway_proxy_route_v1", request_schema=route_preview_body)},
         "/v1/tasks/run-due": {"post": _op(method="postTasksRunDue", summary="Dry-run due schedule tasks", schema_version="api_tasks_run_due_v1", request_schema=run_due_body)},
         "/v1/chat/completions": {"post": _op(method="postChatCompletions", summary="OpenAI-compatible chat completion", schema_version="api_openai_chat_completion_v1", request_schema=chat_body)},
+        "/v1/ops/healthz": {
+            "get": _op(
+                method="getOpsHealthz",
+                summary="Ops sidecar liveness (no bearer; matches ops serve)",
+                schema_version="ops_liveness_v1",
+                security=False,
+            ),
+        },
         "/v1/ops/dashboard": {"get": _op(method="getOpsDashboard", summary="Ops dashboard JSON", schema_version="ops_dashboard_v1", parameters=ops_params)},
         "/v1/ops/workspaces": {"get": _op(method="getOpsWorkspaces", summary="Allowed ops workspaces", schema_version="ops_workspaces_v1", parameters=ops_workspaces_params)},
         "/v1/ops/dashboard.html": {"get": _op(method="getOpsDashboardHtml", summary="Ops dashboard HTML", parameters=ops_params, content_type="text/html")},
