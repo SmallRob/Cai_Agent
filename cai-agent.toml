@@ -55,6 +55,14 @@ compact_min_messages = 8
 compact_on_tool_error = true
 compact_after_tool_calls = 8
 
+# 发往 LLM 的请求正文启发式脱敏（纯正则；非 NLP；不读盘；不外传）。
+# filter：off（默认，不脱敏）| light（凭据形态、邮箱/电话启发式、常见绝对路径）| strict（更严，含长十六进制、SSN 形等）。
+# 环境变量 CAI_PRIVACY_FILTER 优先于本字段（值同上）。
+[privacy]
+filter = "off"
+# filter = "light"
+# filter = "strict"
+
 # 默认不跑编译/测试门禁（与程序内置默认一致）；需要 CI 式检查时再改为 true。
 [quality_gate]
 compile = false
