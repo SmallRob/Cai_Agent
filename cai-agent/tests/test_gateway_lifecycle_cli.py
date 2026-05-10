@@ -225,29 +225,34 @@ class GatewayLifecycleCliTests(unittest.TestCase):
 
         with TemporaryDirectory() as td:
             root = Path(td)
-            profile_id = load_agent_settings_for_workspace(workspace=root.resolve()).profiles[0].id
+            root_res = root.resolve()
+            profile_id = load_agent_settings_for_workspace(workspace=root_res).profiles[0].id
             buf = io.StringIO()
             with patch.dict(os.environ, {"CAI_GATEWAY_FEDERATION_ROUTE_EXECUTE": "1"}, clear=False):
                 # CI may set CAI_GATEWAY_FEDERATION_ROUTE_EXECUTE_TOKEN; without --execute-token the
                 # commit path fails with federation_execute_token_mismatch (see test_api_http_server).
                 saved_tok = os.environ.pop("CAI_GATEWAY_FEDERATION_ROUTE_EXECUTE_TOKEN", None)
                 try:
-                    with patch("cai_agent.__main__.os.getcwd", return_value=str(root)):
-                        with redirect_stdout(buf):
-                            rc = main(
-                                [
-                                    "gateway",
-                                    "route-preview",
-                                    "--platform",
-                                    "telegram",
-                                    "--channel-id",
-                                    "1:2",
-                                    "--target-profile-id",
-                                    profile_id,
-                                    "--execute",
-                                    "--json",
-                                ],
-                            )
+                    # Use explicit --workspace: Path.cwd() in __main__ does not use a patched
+                    # os.getcwd (pathlib binds os at import time), so CI cwd would otherwise be
+                    # the repo root and target_profile_id would not match temp workspace profiles.
+                    with redirect_stdout(buf):
+                        rc = main(
+                            [
+                                "gateway",
+                                "route-preview",
+                                "--workspace",
+                                str(root_res),
+                                "--platform",
+                                "telegram",
+                                "--channel-id",
+                                "1:2",
+                                "--target-profile-id",
+                                profile_id,
+                                "--execute",
+                                "--json",
+                            ],
+                        )
                 finally:
                     if saved_tok is not None:
                         os.environ["CAI_GATEWAY_FEDERATION_ROUTE_EXECUTE_TOKEN"] = saved_tok
