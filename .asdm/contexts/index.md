@@ -43,7 +43,7 @@ cd cai-agent && pip install -e .
 pytest
 
 # 启动TUI
-cai-agent ui -w "$PWD"
+python -m cai-agent ui -w "$PWD"
 
 # 运行命令
 cai-agent run "Summarize this repository layout"

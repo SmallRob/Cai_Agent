@@ -15322,6 +15322,8 @@ def main(argv: list[str] | None = None) -> int:
         rc_ui = 0
         try:
             run_tui(settings)
+        except KeyboardInterrupt:
+            rc_ui = 130
         except Exception:
             rc_ui = 2
         finally:

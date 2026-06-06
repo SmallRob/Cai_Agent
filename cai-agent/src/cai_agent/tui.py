@@ -616,7 +616,10 @@ class SlashAwareInput(Input):
 
 
 def run_tui(settings: Settings) -> None:
-    CaiAgentApp(settings).run()
+    try:
+        CaiAgentApp(settings).run()
+    except KeyboardInterrupt:
+        pass
 
 
 class ProgressUpdate(Message):
