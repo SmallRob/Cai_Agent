@@ -1,0 +1,15 @@
+{
+  "registry_id": "context-builder-requirements",
+  "name": "Context Builder Requirements",
+  "description": "适配需求分析的上下文构建工具，支持前后端项目，从代码中抽取系统能力概览，为需求澄清和特性拆分提供系统上下文。",
+  "scenario": "需求分析上下文构建",
+  "version": "0.2.0",
+  "configType": "toolset",
+  "commands": [
+    "asdm-req-domain-discovery",
+    "asdm-req-context-init",
+    "asdm-req-domain-context-build",
+    "asdm-req-context-merge",
+    "asdm-req-context-update"
+  ]
+}

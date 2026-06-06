@@ -1,0 +1,14 @@
+{
+  "guid": "a1b2c3d4-e5f6-7a8b-9c0d-e1f2a3b4c5d7",
+  "registry_id": "spec-builder",
+  "name": "Spec Builder",
+  "description": "A toolset for helping developers create and manage ASDM specs (coding standards, best practices, and guidelines).",
+  "version": "0.0.1",
+  "configType": "toolset",
+  "commands": [
+    "asdm-complete-spec",
+    "asdm-define-spec-content",
+    "asdm-generate-manifest",
+    "asdm-init-spec"
+  ]
+}
