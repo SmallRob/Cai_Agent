@@ -93,23 +93,38 @@ class AgentState(TypedDict, total=False):
     compact_summary: NotRequired[str]
 
 
-def _core_system_prompt(workspace: str) -> str:
+def _core_system_prompt(settings: Settings) -> str:
+    workspace = settings.workspace
+    mcp_on = bool(settings.mcp_enabled)
+    fetch_on = bool(settings.fetch_url_enabled)
+    tool_spec = tools_spec_markdown(
+        mcp_enabled=mcp_on,
+        fetch_url_enabled=fetch_on,
+    )
+    suggestion_parts = [
+        "先用 list_tree / list_dir / glob_search / search_text / git_status 了解代码；",
+    ]
+    if mcp_on:
+        suggestion_parts.append("如需外部能力可先 mcp_list_tools 再 mcp_call_tool；")
+    if fetch_on:
+        suggestion_parts.append(
+            "若配置已启用 fetch_url，可用 fetch_url 拉取只读网页文本"
+            "（默认 HTTPS + 主机白名单；unrestricted 时无白名单并允许 http）。"
+        )
+    suggestion_parts.append("需要空目录时用 make_dir；写文件用 write_file；需要终端命令再用 run_command。")
     return (
         f"你是 CAI Agent（本地或远程 OpenAI 兼容 API）。工作区根目录（所有相对路径以此为根）:\n{workspace}\n\n"
         "每轮只输出**一个** JSON 对象，不要用 Markdown 代码块包裹以外的多余说明。\n"
         "格式只能是以下之一：\n"
         '1) 结束：{"type":"finish","message":"给用户的最终回答"}\n'
         '2) 调工具：{"type":"tool","name":"工具名","args":{...}}（也可把参数写在 name 旁，例如 list_dir 的 path）\n\n'
-        + tools_spec_markdown()
-        + "\n建议：先用 list_tree / list_dir / glob_search / search_text / git_status 了解代码；"
-        "如需外部能力可先 mcp_list_tools 再 mcp_call_tool；"
-        "若配置已启用 fetch_url，可用 fetch_url 拉取只读网页文本（默认 HTTPS + 主机白名单；unrestricted 时无白名单并允许 http）。"
-        "需要空目录时用 make_dir；写文件用 write_file；需要终端命令再用 run_command。"
+        + tool_spec
+        + "\n建议：" + " ".join(suggestion_parts)
     )
 
 
 def build_system_prompt(settings: Settings) -> str:
-    return augment_system_prompt(settings, _core_system_prompt(settings.workspace))
+    return augment_system_prompt(settings, _core_system_prompt(settings))
 
 
 def build_app(
@@ -606,6 +621,38 @@ def build_app(
             _rb = str(getattr(settings, "runtime_backend", "local") or "local").strip().lower() or "local"
             tool_evt["runtime_backend"] = get_runtime_backend(_rb, settings=settings).name
         _emit(progress, tool_evt)
+        # -- 快速跳过：MCP / fetch_url 未启用时，直接返回提示，跳过危险确认和 HTTP 请求 --
+        if name in ("mcp_list_tools", "mcp_call_tool") and not settings.mcp_enabled:
+            skip_msg = (
+                f"[MCP 未启用] 工具 {name} 不可用：[agent].mcp_enabled=false。"
+                "请在 cai-agent.toml 中设置 mcp_enabled=true 并配置 [mcp].base_url，"
+                "或改用其他可用工具。"
+            )
+            _emit(progress, {"phase": "tool_done", "name": name})
+            messages.append({"role": "user", "content": json.dumps(
+                {"tool": name, "result": skip_msg}, ensure_ascii=False,
+            )})
+            return {
+                "messages": messages,
+                "pending": None,
+                "tool_call_count": int(state.get("tool_call_count") or 0),
+                "tool_error_compact_pending": True,
+            }
+        if name == "fetch_url" and not settings.fetch_url_enabled:
+            skip_msg = (
+                "[fetch_url 未启用] 工具 fetch_url 不可用：[fetch_url].enabled=false。"
+                "请在 cai-agent.toml 的 [fetch_url] 中设置 enabled=true，或改用 run_command + curl。"
+            )
+            _emit(progress, {"phase": "tool_done", "name": name})
+            messages.append({"role": "user", "content": json.dumps(
+                {"tool": name, "result": skip_msg}, ensure_ascii=False,
+            )})
+            return {
+                "messages": messages,
+                "pending": None,
+                "tool_call_count": int(state.get("tool_call_count") or 0),
+                "tool_error_compact_pending": True,
+            }
         need_u, reason_u = needs_dangerous_confirmation(settings, name, args)
         if (
             need_u

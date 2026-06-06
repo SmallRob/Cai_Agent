@@ -8369,7 +8369,7 @@ def main(argv: list[str] | None = None) -> int:
             "4) 验证与回滚策略\n\n"
             f"工作区根目录: {settings.workspace}\n\n"
             "下列是 Agent 在执行阶段可用的工具说明（只读/写入/搜索等）：\n"
-            f"{tools_spec_markdown()}\n"
+            f"{tools_spec_markdown(mcp_enabled=bool(settings.mcp_enabled), fetch_url_enabled=bool(settings.fetch_url_enabled))}\n"
             "本次仅输出规划文本，不要再输出 JSON 工具调用指令。"
             f"{rules_block}"
         )

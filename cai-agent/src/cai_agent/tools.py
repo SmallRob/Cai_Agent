@@ -1252,11 +1252,23 @@ def dispatch(settings: Settings, name: str, args: dict[str, Any]) -> str:
         return tool_git_status(settings, args)
     if name == "git_diff":
         return tool_git_diff(settings, args)
+    if name in ("mcp_list_tools", "mcp_call_tool"):
+        if not settings.mcp_enabled:
+            return (
+                f"[MCP 未启用] 工具 {name} 不可用：[agent].mcp_enabled=false。"
+                "请在 cai-agent.toml 中设置 mcp_enabled=true 并配置 [mcp].base_url，"
+                "或改用其他可用工具（如 read_file / glob_search / search_text 等）。"
+            )
     if name == "mcp_list_tools":
         return tool_mcp_list_tools(settings, args)
     if name == "mcp_call_tool":
         return tool_mcp_call_tool(settings, args)
     if name == "fetch_url":
+        if not settings.fetch_url_enabled:
+            return (
+                "[fetch_url 未启用] 工具 fetch_url 不可用：[fetch_url].enabled=false。"
+                "请在 cai-agent.toml 的 [fetch_url] 中设置 enabled=true，或改用 run_command + curl。"
+            )
         return tool_fetch_url(settings, args)
     raise SandboxError(f"未知工具: {name}")
 
@@ -1280,19 +1292,43 @@ DISPATCH_TOOL_NAMES: frozenset[str] = frozenset(
 )
 
 
-def tools_spec_markdown() -> str:
-    return """可用工具（通过 JSON 调用）：
-- read_file: {"path": "...", "line_start": 1, "line_end": 120} — line_end 可省略表示读到文件末尾；解限模式下 ``path`` 可为绝对路径（工作区外须二次确认）
-- list_dir: {"path": "." 或子目录} — 解限下 ``path`` 可为绝对路径（工作区外须二次确认）
-- list_tree: {"path": ".", "max_depth": 3, "max_entries": 400} — 目录树（深度与条数受限）；解限下 ``path`` 可为绝对路径（工作区外须二次确认）
-- glob_search: {"pattern": "**/*.py", "root": ".", "max_matches": 200} — 解限下 ``root`` 可为绝对路径（工作区外须二次确认）；Windows 下单写 ``E:`` 视为 ``E:\\`` 盘根（否则会与「该盘当前目录」语义混淆）
-- search_text: {"query": "子串", "root": ".", "glob": "**/*.py", "max_files": 100, "max_matches": 80, "max_file_bytes": 400000} — 解限下 ``root`` 可为绝对路径（工作区外须二次确认）
-- git_status: {"short": true} — 只读 git 状态
-- git_diff: {"staged": false, "path": "可选相对路径"} — 只读 git diff
-- mcp_list_tools: {"force": false} — 从 MCP Bridge 拉取工具清单（短时缓存，需开启 MCP）
-- mcp_call_tool: {"name":"tool_name","args":{...}} — 调用 MCP Bridge 工具（需开启 MCP）；当 [safety].unrestricted_mode=true 且 dangerous_confirmation_required=true 时，每次调用需二次确认
-- fetch_url: {"url": "https://..."} — GET；默认仅 HTTPS 且须 allow_hosts 白名单；[fetch_url].unrestricted=true 时可任意公网主机并允许 http；不支持 file://；[fetch_url].max_redirects（1–50，默认 20）控制跟随重定向；请求前对 DNS 解析结果做私网/本机拒绝（反 DNS rebinding），内网解析需 [fetch_url].allow_private_resolved_ips=true 或 CAI_FETCH_URL_ALLOW_PRIVATE_RESOLVED_IPS=1（解限且要求确认时须二次确认）；受 permissions.fetch_url 约束；明文 http 在解限且要求确认时需二次确认
-- write_file: {"path": "相对或绝对路径", "content": "文件全文"} — 非解限仅允许相对工作区路径；解限下可用绝对路径（工作区外须二次确认）；敏感后缀与关键配置文件名等规则仍适用
-- make_dir: {"path": "相对或绝对目录路径"} — 递归创建目录（mkdir -p）；非解限仅工作区内；解限绝对路径在工作区外须二次确认；权限同 write_file
-- run_command: {"argv": ["python", "script.py"], "cwd": "."} — argv[0] 只能是允许基名之一，禁止路径与 shell 元字符；解限下 ``cwd`` 可为绝对路径（工作区外须二次确认）；命中高危模式或 ``run_command_extra_danger_basenames`` 仍须二次确认
-"""
+def tools_spec_markdown(
+    *,
+    mcp_enabled: bool = True,
+    fetch_url_enabled: bool = True,
+) -> str:
+    """生成工具说明 Markdown，供系统提示使用。
+
+    当 ``mcp_enabled=False`` 时，MCP 相关工具（mcp_list_tools / mcp_call_tool）
+    会从说明中移除，避免 LLM 尝试调用不可用的 MCP 工具。
+    同理 ``fetch_url_enabled=False`` 时移除 fetch_url。
+    """
+    lines = [
+        "可用工具（通过 JSON 调用）：",
+        '- read_file: {"path": "...", "line_start": 1, "line_end": 120} — line_end 可省略表示读到文件末尾；解限模式下 ``path`` 可为绝对路径（工作区外须二次确认）',
+        '- list_dir: {"path": "." 或子目录} — 解限下 ``path`` 可为绝对路径（工作区外须二次确认）',
+        '- list_tree: {"path": ".", "max_depth": 3, "max_entries": 400} — 目录树（深度与条数受限）；解限下 ``path`` 可为绝对路径（工作区外须二次确认）',
+        '- glob_search: {"pattern": "**/*.py", "root": ".", "max_matches": 200} — 解限下 ``root`` 可为绝对路径（工作区外须二次确认）；Windows 下单写 ``E:`` 视为 ``E:\\`` 盘根（否则会与「该盘当前目录」语义混淆）',
+        '- search_text: {"query": "子串", "root": ".", "glob": "**/*.py", "max_files": 100, "max_matches": 80, "max_file_bytes": 400000} — 解限下 ``root`` 可为绝对路径（工作区外须二次确认）',
+        '- git_status: {"short": true} — 只读 git 状态',
+        '- git_diff: {"staged": false, "path": "可选相对路径"} — 只读 git diff',
+    ]
+    if mcp_enabled:
+        lines.append(
+            '- mcp_list_tools: {"force": false} — 从 MCP Bridge 拉取工具清单（短时缓存，需开启 MCP）',
+        )
+        lines.append(
+            '- mcp_call_tool: {"name":"tool_name","args":{...}} — 调用 MCP Bridge 工具（需开启 MCP）；当 [safety].unrestricted_mode=true 且 dangerous_confirmation_required=true 时，每次调用需二次确认',
+        )
+    if fetch_url_enabled:
+        lines.append(
+            '- fetch_url: {"url": "https://..."} — GET；默认仅 HTTPS 且须 allow_hosts 白名单；[fetch_url].unrestricted=true 时可任意公网主机并允许 http；不支持 file://；[fetch_url].max_redirects（1–50，默认 20）控制跟随重定向；请求前对 DNS 解析结果做私网/本机拒绝（反 DNS rebinding），内网解析需 [fetch_url].allow_private_resolved_ips=true 或 CAI_FETCH_URL_ALLOW_PRIVATE_RESOLVED_IPS=1（解限且要求确认时须二次确认）；受 permissions.fetch_url 约束；明文 http 在解限且要求确认时需二次确认',
+        )
+    lines.extend(
+        [
+            '- write_file: {"path": "相对或绝对路径", "content": "文件全文"} — 非解限仅允许相对工作区路径；解限下可用绝对路径（工作区外须二次确认）；敏感后缀与关键配置文件名等规则仍适用',
+            '- make_dir: {"path": "相对或绝对目录路径"} — 递归创建目录（mkdir -p）；非解限仅工作区内；解限绝对路径在工作区外须二次确认；权限同 write_file',
+            '- run_command: {"argv": ["python", "script.py"], "cwd": "."} — argv[0] 只能是允许基名之一，禁止路径与 shell 元字符；解限下 ``cwd`` 可为绝对路径（工作区外须二次确认）；命中高危模式或 ``run_command_extra_danger_basenames`` 仍须二次确认',
+        ],
+    )
+    return "\n".join(lines) + "\n"
