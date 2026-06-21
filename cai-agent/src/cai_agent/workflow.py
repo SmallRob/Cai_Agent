@@ -196,6 +196,72 @@ _BUILTIN_TEMPLATES: dict[str, dict[str, Any]] = {
             },
         ],
     },
+    "doc-generate": {
+        "description": "文档生成：探索代码库 → 分析结构 → 生成文档",
+        "on_error": "fail_fast",
+        "merge_strategy": "role_priority",
+        "steps": [
+            {
+                "name": "explore",
+                "role": "explorer",
+                "goal": "{{GOAL}} —— 阶段：探索代码库结构，分析项目的主要模块、功能和架构，输出结构摘要与关键文件清单",
+            },
+            {
+                "name": "analyze",
+                "role": "default",
+                "goal": "{{GOAL}} —— 阶段：分析代码细节，提取关键信息，识别文档重点，整理文档大纲",
+            },
+            {
+                "name": "write",
+                "role": "default",
+                "goal": "{{GOAL}} —— 阶段：根据探索和分析结果，生成高质量的技术文档，使用 write_file 工具写入文件",
+            },
+        ],
+    },
+    "doc-update": {
+        "description": "文档更新：分析变更 → 识别影响 → 更新文档",
+        "on_error": "continue_on_error",
+        "merge_strategy": "last_wins",
+        "steps": [
+            {
+                "name": "diff-analysis",
+                "role": "explorer",
+                "goal": "{{GOAL}} —— 阶段：分析代码变更（Git diff），识别影响范围和变更内容",
+            },
+            {
+                "name": "impact-assessment",
+                "role": "default",
+                "goal": "{{GOAL}} —— 阶段：评估变更对现有文档的影响，识别需要更新的章节",
+            },
+            {
+                "name": "doc-update",
+                "role": "default",
+                "goal": "{{GOAL}} —— 阶段：更新受影响的文档内容，保持文档结构和风格一致",
+            },
+        ],
+    },
+    "doc-review": {
+        "description": "文档审查：检查文档质量、准确性和一致性",
+        "on_error": "continue_on_error",
+        "merge_strategy": "last_wins",
+        "steps": [
+            {
+                "name": "structure-check",
+                "role": "default",
+                "goal": "{{GOAL}} —— 阶段：检查文档结构完整性，是否包含所有必要章节",
+            },
+            {
+                "name": "accuracy-check",
+                "role": "explorer",
+                "goal": "{{GOAL}} —— 阶段：验证文档内容与代码的一致性，检查过时信息",
+            },
+            {
+                "name": "quality-report",
+                "role": "reviewer",
+                "goal": "{{GOAL}} —— 阶段：综合评估文档质量，给出评分和改进建议",
+            },
+        ],
+    },
 }
 
 

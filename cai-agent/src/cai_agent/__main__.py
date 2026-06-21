@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import asyncio
 from collections import Counter
 import json
 import os
@@ -4428,6 +4429,218 @@ def main(argv: list[str] | None = None) -> int:
         help="permissions=ask 时等价于设置 CAI_AUTO_APPROVE=1（本进程内）",
     )
 
+    # --- doc 子命令：AI 文档编写 ---
+    doc_p = sub.add_parser(
+        "doc",
+        parents=[common],
+        help="AI 文档编写：生成、更新、审查项目文档",
+    )
+    doc_p.add_argument(
+        "-w",
+        "--workspace",
+        default=None,
+        help="工作区根目录（默认当前目录或环境变量 CAI_WORKSPACE）",
+    )
+    doc_p.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="以一行 JSON 输出结果",
+    )
+    doc_sub = doc_p.add_subparsers(dest="doc_action", required=True)
+
+    # doc generate
+    doc_gen_p = doc_sub.add_parser(
+        "generate",
+        help="生成文档",
+    )
+    doc_gen_p.add_argument(
+        "--type",
+        required=True,
+        dest="doc_type",
+        choices=["readme", "api", "architecture", "changelog", "contributing", "custom"],
+        help="文档类型",
+    )
+    doc_gen_p.add_argument(
+        "--output",
+        default=None,
+        help="输出文件路径（默认根据类型自动选择）",
+    )
+    doc_gen_p.add_argument(
+        "--source",
+        action="append",
+        default=[],
+        dest="source_dirs",
+        help="源代码目录（可重复指定）",
+    )
+    doc_gen_p.add_argument(
+        "--goal",
+        default="",
+        dest="goal_extra",
+        help="额外的生成要求",
+    )
+    doc_gen_p.add_argument(
+        "--language",
+        default="zh-CN",
+        help="文档语言（默认 zh-CN）",
+    )
+
+    # doc update
+    doc_upd_p = doc_sub.add_parser(
+        "update",
+        help="更新文档",
+    )
+    doc_upd_p.add_argument(
+        "--file",
+        required=True,
+        dest="doc_file",
+        help="要更新的文档文件路径",
+    )
+    doc_upd_p.add_argument(
+        "--diff",
+        default=None,
+        dest="diff_range",
+        help="Git diff 范围（如 HEAD~3）",
+    )
+    doc_upd_p.add_argument(
+        "--based-on",
+        default="recent",
+        help="更新依据（默认 recent）",
+    )
+
+    # doc review
+    doc_rev_p = doc_sub.add_parser(
+        "review",
+        help="审查文档",
+    )
+    doc_rev_p.add_argument(
+        "--file",
+        required=True,
+        dest="doc_file",
+        help="要审查的文档文件路径",
+    )
+
+    # doc types
+    doc_types_p = doc_sub.add_parser(
+        "types",
+        help="列出支持的文档类型",
+    )
+
+    # --- serve 子命令：启动服务 ---
+    serve_p = sub.add_parser(
+        "serve",
+        parents=[common],
+        help="启动服务端（MCP/A2A），使 Cai Agent 可以被其他 Agent 调用",
+    )
+    serve_p.add_argument(
+        "-w",
+        "--workspace",
+        default=None,
+        help="工作区根目录（默认当前目录或环境变量 CAI_WORKSPACE）",
+    )
+    serve_sub = serve_p.add_subparsers(dest="serve_action", required=True)
+
+    # serve mcp
+    serve_mcp_p = serve_sub.add_parser(
+        "mcp",
+        help="启动 MCP Server（stdio/SSE 模式）",
+    )
+    serve_mcp_p.add_argument(
+        "--transport",
+        choices=["stdio", "sse"],
+        default="stdio",
+        help="传输模式：stdio（本地）或 sse（远程），默认 stdio",
+    )
+    serve_mcp_p.add_argument(
+        "--host",
+        default="0.0.0.0",
+        help="SSE 模式的监听地址，默认 0.0.0.0",
+    )
+    serve_mcp_p.add_argument(
+        "--port",
+        type=int,
+        default=8090,
+        help="SSE 模式的监听端口，默认 8090",
+    )
+
+    # serve a2a
+    serve_a2a_p = serve_sub.add_parser(
+        "a2a",
+        help="启动 A2A Server（HTTP 模式）",
+    )
+    serve_a2a_p.add_argument(
+        "--host",
+        default="0.0.0.0",
+        help="监听地址，默认 0.0.0.0",
+    )
+    serve_a2a_p.add_argument(
+        "--port",
+        type=int,
+        default=8080,
+        help="监听端口，默认 8080",
+    )
+    serve_a2a_p.add_argument(
+        "--api-key",
+        default=None,
+        help="API 密钥（可选，用于认证）",
+    )
+
+    # serve acp
+    serve_acp_p = serve_sub.add_parser(
+        "acp",
+        help="启动 ACP Server（Agent Communication Protocol）",
+    )
+    serve_acp_p.add_argument(
+        "--host",
+        default="0.0.0.0",
+        help="监听地址，默认 0.0.0.0",
+    )
+    serve_acp_p.add_argument(
+        "--port",
+        type=int,
+        default=8070,
+        help="监听端口，默认 8070",
+    )
+    serve_acp_p.add_argument(
+        "--api-key",
+        default=None,
+        help="API 密钥（可选，用于认证）",
+    )
+
+    # serve all
+    serve_all_p = serve_sub.add_parser(
+        "all",
+        help="同时启动 MCP、A2A 和 ACP 服务",
+    )
+    serve_all_p.add_argument(
+        "--mcp-port",
+        type=int,
+        default=8090,
+        help="MCP Server 端口，默认 8090",
+    )
+    serve_all_p.add_argument(
+        "--a2a-port",
+        type=int,
+        default=8080,
+        help="A2A Server 端口，默认 8080",
+    )
+    serve_all_p.add_argument(
+        "--acp-port",
+        type=int,
+        default=8070,
+        help="ACP Server 端口，默认 8070",
+    )
+    serve_all_p.add_argument(
+        "--host",
+        default="0.0.0.0",
+        help="监听地址，默认 0.0.0.0",
+    )
+    serve_all_p.add_argument(
+        "--api-key",
+        default=None,
+        help="API 密钥（可选，用于 A2A/ACP 认证）",
+    )
+
     doctor_p = sub.add_parser(
         "doctor",
         parents=[common],
@@ -8280,6 +8493,412 @@ def main(argv: list[str] | None = None) -> int:
             )
             return 0 if ok else 2
         print(f"unknown voice action: {act}", file=sys.stderr)
+        return 2
+
+    # --- doc 命令处理 ---
+    if args.command == "doc":
+        t_doc = time.perf_counter()
+        try:
+            settings = Settings.from_env(
+                config_path=args.config,
+                workspace_hint=_settings_workspace_hint(args),
+            )
+        except FileNotFoundError as e:
+            if bool(getattr(args, "json_output", False)):
+                print(
+                    json.dumps(
+                        {
+                            "schema_version": "doc_error_v1",
+                            "ok": False,
+                            "error": "config_not_found",
+                            "message": str(e),
+                            "generated_at": datetime.now(UTC).isoformat(),
+                        },
+                        ensure_ascii=False,
+                    ),
+                )
+            else:
+                print(str(e), file=sys.stderr)
+            return 2
+
+        if args.model:
+            settings = replace(settings, model=str(args.model).strip())
+        if args.workspace:
+            settings = replace(
+                settings,
+                workspace=os.path.abspath(args.workspace),
+            )
+
+        from cai_agent.doc_writer import (
+            DocGenerateRequest,
+            generate_doc,
+            review_doc,
+            update_doc,
+            list_doc_types,
+            DOC_TYPE_CONFIG,
+        )
+
+        doc_action = str(getattr(args, "doc_action", "") or "").strip().lower()
+        json_output = bool(getattr(args, "json_output", False))
+
+        if doc_action == "types":
+            types_list = list_doc_types()
+            if json_output:
+                print(json.dumps(types_list, ensure_ascii=False, indent=2))
+            else:
+                print("支持的文档类型：\n")
+                for t in types_list:
+                    print(f"  {t['type']:15s} - {t['name']}: {t['description']}")
+                    print(f"                  默认输出: {t['default_output']}")
+                    print(f"                  必需章节: {', '.join(t['required_sections'])}")
+                    print()
+            _maybe_metrics_cli(
+                module="doc",
+                event="doc.types",
+                latency_ms=(time.perf_counter() - t_doc) * 1000.0,
+                tokens=0,
+                success=True,
+            )
+            return 0
+
+        if doc_action == "generate":
+            doc_type = str(getattr(args, "doc_type", "") or "").strip()
+            output_path = getattr(args, "output", None)
+            source_dirs = list(getattr(args, "source_dirs", []) or [])
+            goal_extra = str(getattr(args, "goal_extra", "") or "").strip()
+            language = str(getattr(args, "language", "zh-CN") or "zh-CN").strip()
+
+            if not source_dirs:
+                source_dirs = ["."]
+
+            # 默认输出路径
+            if not output_path:
+                config = DOC_TYPE_CONFIG.get(doc_type, {})
+                output_path = config.get("default_output", f"docs/{doc_type.upper()}.md")
+
+            request = DocGenerateRequest(
+                doc_type=doc_type,
+                output_path=output_path,
+                source_dirs=source_dirs,
+                language=language,
+                goal_extra=goal_extra,
+            )
+
+            print(f"[doc generate] 开始生成 {doc_type} 文档...")
+            print(f"[doc generate] 输出路径: {output_path}")
+            print()
+
+            result = generate_doc(settings, request)
+
+            if json_output:
+                print(json.dumps(
+                    {
+                        "schema_version": result.schema_version,
+                        "ok": result.ok,
+                        "output_path": result.output_path,
+                        "doc_type": result.doc_type,
+                        "sections_generated": result.sections_generated,
+                        "word_count": result.word_count,
+                        "elapsed_ms": result.elapsed_ms,
+                        "tokens_used": result.tokens_used,
+                        "warnings": result.warnings,
+                        "error": result.error,
+                        "generated_at": result.generated_at,
+                    },
+                    ensure_ascii=False,
+                ))
+            else:
+                if result.ok:
+                    print(f"[doc generate] ✓ 文档生成成功")
+                    print(f"[doc generate]   输出路径: {result.output_path}")
+                    print(f"[doc generate]   字数: {result.word_count}")
+                    print(f"[doc generate]   章节数: {len(result.sections_generated)}")
+                    if result.sections_generated:
+                        print(f"[doc generate]   章节列表:")
+                        for s in result.sections_generated[:10]:
+                            print(f"[doc generate]     - {s}")
+                        if len(result.sections_generated) > 10:
+                            print(f"[doc generate]     ... 共 {len(result.sections_generated)} 个章节")
+                    print(f"[doc generate]   耗时: {result.elapsed_ms}ms")
+                    print(f"[doc generate]   Token 用量: {result.tokens_used}")
+                else:
+                    print(f"[doc generate] ✗ 文档生成失败", file=sys.stderr)
+                    if result.error:
+                        print(f"[doc generate]   错误: {result.error}", file=sys.stderr)
+
+            _maybe_metrics_cli(
+                module="doc",
+                event="doc.generate",
+                latency_ms=(time.perf_counter() - t_doc) * 1000.0,
+                tokens=result.tokens_used,
+                success=result.ok,
+            )
+            return 0 if result.ok else 2
+
+        if doc_action == "update":
+            doc_file = str(getattr(args, "doc_file", "") or "").strip()
+            diff_range = getattr(args, "diff_range", None)
+            based_on = str(getattr(args, "based_on", "recent") or "recent").strip()
+
+            if not doc_file:
+                print("[doc update] 错误：必须指定 --file 参数", file=sys.stderr)
+                return 2
+
+            print(f"[doc update] 开始更新文档 {doc_file}...")
+
+            result = update_doc(
+                settings,
+                doc_file,
+                diff_range=diff_range,
+                based_on=based_on,
+            )
+
+            if json_output:
+                print(json.dumps(
+                    {
+                        "schema_version": result.schema_version,
+                        "ok": result.ok,
+                        "file_path": result.file_path,
+                        "changes_summary": result.changes_summary,
+                        "sections_updated": result.sections_updated,
+                        "elapsed_ms": result.elapsed_ms,
+                        "tokens_used": result.tokens_used,
+                        "warnings": result.warnings,
+                        "error": result.error,
+                        "generated_at": result.generated_at,
+                    },
+                    ensure_ascii=False,
+                ))
+            else:
+                if result.ok:
+                    print(f"[doc update] ✓ 文档更新完成")
+                    print(f"[doc update]   文件: {result.file_path}")
+                    print(f"[doc update]   变更摘要: {result.changes_summary[:200]}")
+                    if result.sections_updated:
+                        print(f"[doc update]   更新的章节:")
+                        for s in result.sections_updated[:10]:
+                            print(f"[doc update]     {s}")
+                    print(f"[doc update]   耗时: {result.elapsed_ms}ms")
+                    print(f"[doc update]   Token 用量: {result.tokens_used}")
+                else:
+                    print(f"[doc update] ✗ 文档更新失败", file=sys.stderr)
+                    if result.error:
+                        print(f"[doc update]   错误: {result.error}", file=sys.stderr)
+
+            _maybe_metrics_cli(
+                module="doc",
+                event="doc.update",
+                latency_ms=(time.perf_counter() - t_doc) * 1000.0,
+                tokens=result.tokens_used,
+                success=result.ok,
+            )
+            return 0 if result.ok else 2
+
+        if doc_action == "review":
+            doc_file = str(getattr(args, "doc_file", "") or "").strip()
+
+            if not doc_file:
+                print("[doc review] 错误：必须指定 --file 参数", file=sys.stderr)
+                return 2
+
+            print(f"[doc review] 开始审查文档 {doc_file}...")
+
+            result = review_doc(settings, doc_file)
+
+            if json_output:
+                print(json.dumps(
+                    {
+                        "schema_version": result.schema_version,
+                        "ok": result.ok,
+                        "file_path": result.file_path,
+                        "issues": result.issues,
+                        "score": result.score,
+                        "suggestions": result.suggestions,
+                        "elapsed_ms": result.elapsed_ms,
+                        "tokens_used": result.tokens_used,
+                        "error": result.error,
+                        "generated_at": result.generated_at,
+                    },
+                    ensure_ascii=False,
+                ))
+            else:
+                if result.ok:
+                    print(f"[doc review] ✓ 文档审查完成")
+                    print(f"[doc review]   文件: {result.file_path}")
+                    print(f"[doc review]   评分: {result.score}/100")
+                    if result.issues:
+                        print(f"[doc review]   发现 {len(result.issues)} 个问题:")
+                        for issue in result.issues[:5]:
+                            severity = issue.get("severity", "unknown")
+                            desc = issue.get("description", "")
+                            print(f"[doc review]     [{severity}] {desc[:100]}")
+                    if result.suggestions:
+                        print(f"[doc review]   改进建议:")
+                        for s in result.suggestions[:3]:
+                            print(f"[doc review]     - {s[:100]}")
+                    print(f"[doc review]   耗时: {result.elapsed_ms}ms")
+                    print(f"[doc review]   Token 用量: {result.tokens_used}")
+                else:
+                    print(f"[doc review] ✗ 文档审查失败", file=sys.stderr)
+                    if result.error:
+                        print(f"[doc review]   错误: {result.error}", file=sys.stderr)
+
+            _maybe_metrics_cli(
+                module="doc",
+                event="doc.review",
+                latency_ms=(time.perf_counter() - t_doc) * 1000.0,
+                tokens=result.tokens_used,
+                success=result.ok,
+            )
+            return 0 if result.ok else 2
+
+        print(f"unknown doc action: {doc_action}", file=sys.stderr)
+        return 2
+
+    # --- serve 命令处理 ---
+    if args.command == "serve":
+        serve_action = str(getattr(args, "serve_action", "") or "").strip().lower()
+
+        if serve_action == "mcp":
+            from cai_agent.server.mcp_server import CaiAgentMCPServer, run_mcp_sse, run_mcp_stdio
+
+            transport = getattr(args, "transport", "stdio")
+            host = getattr(args, "host", "0.0.0.0")
+            port = getattr(args, "port", 8090)
+
+            # 加载配置
+            try:
+                settings = Settings.from_env(
+                    config_path=args.config,
+                    workspace_hint=_settings_workspace_hint(args),
+                )
+            except FileNotFoundError as e:
+                print(f"配置加载失败: {e}", file=sys.stderr)
+                return 2
+
+            server = CaiAgentMCPServer(settings)
+
+            if transport == "stdio":
+                print("[serve mcp] 以 stdio 模式启动 MCP Server...", file=sys.stderr)
+                asyncio.run(run_mcp_stdio(server))
+            else:
+                print(f"[serve mcp] 以 SSE 模式启动 MCP Server，监听 {host}:{port}...", file=sys.stderr)
+                asyncio.run(run_mcp_sse(server, host=host, port=port))
+            return 0
+
+        if serve_action == "a2a":
+            from cai_agent.server.a2a_server import CaiAgentA2AServer
+
+            host = getattr(args, "host", "0.0.0.0")
+            port = getattr(args, "port", 8080)
+            api_key = getattr(args, "api_key", None)
+
+            # 加载配置
+            try:
+                settings = Settings.from_env(
+                    config_path=args.config,
+                    workspace_hint=_settings_workspace_hint(args),
+                )
+            except FileNotFoundError as e:
+                print(f"配置加载失败: {e}", file=sys.stderr)
+                return 2
+
+            print(f"[serve a2a] 启动 A2A Server，监听 {host}:{port}...", file=sys.stderr)
+            server = CaiAgentA2AServer(
+                settings,
+                host=host,
+                port=port,
+                api_key=api_key,
+            )
+            server.run()
+            return 0
+
+        if serve_action == "acp":
+            from cai_agent.server.acp_server import CaiAgentACPServer
+
+            host = getattr(args, "host", "0.0.0.0")
+            port = getattr(args, "port", 8070)
+            api_key = getattr(args, "api_key", None)
+
+            # 加载配置
+            try:
+                settings = Settings.from_env(
+                    config_path=args.config,
+                    workspace_hint=_settings_workspace_hint(args),
+                )
+            except FileNotFoundError as e:
+                print(f"配置加载失败: {e}", file=sys.stderr)
+                return 2
+
+            print(f"[serve acp] 启动 ACP Server，监听 {host}:{port}...", file=sys.stderr)
+            server = CaiAgentACPServer(
+                settings,
+                host=host,
+                port=port,
+                api_key=api_key,
+            )
+            server.run()
+            return 0
+
+        if serve_action == "all":
+            from cai_agent.server.a2a_server import CaiAgentA2AServer
+            from cai_agent.server.acp_server import CaiAgentACPServer
+            from cai_agent.server.mcp_server import CaiAgentMCPServer, run_mcp_sse
+
+            host = getattr(args, "host", "0.0.0.0")
+            mcp_port = getattr(args, "mcp_port", 8090)
+            a2a_port = getattr(args, "a2a_port", 8080)
+            acp_port = getattr(args, "acp_port", 8070)
+            api_key = getattr(args, "api_key", None)
+
+            # 加载配置
+            try:
+                settings = Settings.from_env(
+                    config_path=args.config,
+                    workspace_hint=_settings_workspace_hint(args),
+                )
+            except FileNotFoundError as e:
+                print(f"配置加载失败: {e}", file=sys.stderr)
+                return 2
+
+            print(f"[serve all] 启动服务：", file=sys.stderr)
+            print(f"  MCP Server: {host}:{mcp_port} (SSE)", file=sys.stderr)
+            print(f"  A2A Server: {host}:{a2a_port}", file=sys.stderr)
+            print(f"  ACP Server: {host}:{acp_port}", file=sys.stderr)
+
+            # 创建服务器
+            mcp_server = CaiAgentMCPServer(settings)
+            a2a_server = CaiAgentA2AServer(
+                settings,
+                host=host,
+                port=a2a_port,
+                api_key=api_key,
+            )
+            acp_server = CaiAgentACPServer(
+                settings,
+                host=host,
+                port=acp_port,
+                api_key=api_key,
+            )
+
+            async def run_all():
+                # 并行启动三个服务
+                mcp_task = asyncio.create_task(run_mcp_sse(mcp_server, host=host, port=mcp_port))
+
+                # A2A/ACP 服务需要在单独的线程中运行
+                import threading
+                a2a_thread = threading.Thread(target=a2a_server.run, daemon=True)
+                a2a_thread.start()
+                acp_thread = threading.Thread(target=acp_server.run, daemon=True)
+                acp_thread.start()
+
+                # 等待 MCP 服务
+                await mcp_task
+
+            asyncio.run(run_all())
+            return 0
+
+        print(f"unknown serve action: {serve_action}", file=sys.stderr)
         return 2
 
     if args.command == "plan":

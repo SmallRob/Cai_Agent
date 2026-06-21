@@ -16,6 +16,25 @@ cai-agent = "cai_agent.__main__:main"
 dev = [
     "pytest>=8",
 ]
+mcp = [
+    "mcp>=1.0",
+    "starlette>=0.27",
+    "uvicorn>=0.27",
+]
+a2a = [
+    "fastapi>=0.110",
+    "uvicorn>=0.27",
+]
+acp = [
+    "fastapi>=0.110",
+    "uvicorn>=0.27",
+]
+server = [
+    "mcp>=1.0",
+    "fastapi>=0.110",
+    "starlette>=0.27",
+    "uvicorn>=0.27",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
